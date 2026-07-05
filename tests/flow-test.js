@@ -1,10 +1,11 @@
 // End-to-end flow test. Boots the app, drives real HTTP, asserts each state transition.
-process.env.DB_PATH = '/tmp/pw-test/db.sqlite';
+const TEST_DIR = process.env.TEST_DB_DIR || '/tmp/pw-test';
+process.env.DB_PATH = TEST_DIR + '/db.sqlite';
 process.env.PORT = '4123';
 process.env.CHECK_INTERVAL_MS = '400';
 process.env.SECRET = 'test-secret';
 import { rmSync } from 'node:fs';
-try { rmSync('/tmp/pw-test', { recursive: true, force: true }); } catch {}
+try { rmSync(TEST_DIR, { recursive: true, force: true }); } catch {}
 await import('../server.js');
 const db = await import('../db.js');
 const BASE = 'http://localhost:4123';

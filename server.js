@@ -253,7 +253,7 @@ const server = http.createServer(async (req, res) => {
     const user = currentUser(req);
 
     // public pages
-    if (path === '/' && method === 'GET') return send(res, 200, landing({ user }));
+    if (path === '/' && method === 'GET') return send(res, 200, landing({ user, appUrl: app }));
     if (path === '/pricing' && method === 'GET') return send(res, 200, pricing({ user, paddle: paddleConfig(user) }));
     if (path === '/docs' && method === 'GET') return send(res, 200, docs({ user, appUrl: app }));
     if (method === 'GET' && ['/terms', '/privacy', '/refund', '/contact'].includes(path)) {
@@ -378,7 +378,7 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
-    return send(res, 404, landing({ user }).replace('<title>', '<title>Not found · '));
+    return send(res, 404, landing({ user, appUrl: app }).replace('<title>', '<title>Not found · '));
   } catch (e) {
     console.error('[server] error', e);
     return send(res, 500, 'Internal error');

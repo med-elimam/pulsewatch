@@ -67,7 +67,7 @@ th{color:var(--muted);font-weight:600;font-size:12.5px;text-transform:uppercase;
   </div>
   <p class="small muted" style="margin-top:16px">No credit card · 1 free monitor · Setup in one line</p>
   <div style="max-width:620px;margin:34px auto 0">
-    <div class="code"><button class="btn ghost sm copy" data-copy="curl -fsS https://app.pulsewatch.io/ping/YOUR_TOKEN" onclick="copyText(this)">Copy</button><span class="mono">curl -fsS https://app.pulsewatch.io/ping/YOUR_TOKEN</span></div>
+    <div class="code"><button class="btn ghost sm copy" data-copy="curl -fsS https://pulsewatch.maurisis.com/ping/YOUR_TOKEN" onclick="copyText(this)">Copy</button><span class="mono">curl -fsS https://pulsewatch.maurisis.com/ping/YOUR_TOKEN</span></div>
     <p class="small muted" style="margin-top:10px">Add that one line to the end of any job. Silence = we alert you.</p>
   </div>
 </section>
@@ -94,7 +94,7 @@ th{color:var(--muted);font-weight:600;font-size:12.5px;text-transform:uppercase;
     </div>
     <div class="card">
       <p class="small muted" style="margin-top:0">Cron example — one extra step:</p>
-      <div class="code mono"><button class="btn ghost sm copy" data-copy="0 3 * * * /usr/local/bin/backup.sh && curl -fsS https://app.pulsewatch.io/ping/YOUR_TOKEN" onclick="copyText(this)">Copy</button>0 3 * * * /usr/local/bin/backup.sh \<br>&nbsp;&nbsp;&amp;&amp; curl -fsS .../ping/YOUR_TOKEN</div>
+      <div class="code mono"><button class="btn ghost sm copy" data-copy="0 3 * * * /usr/local/bin/backup.sh && curl -fsS https://pulsewatch.maurisis.com/ping/YOUR_TOKEN" onclick="copyText(this)">Copy</button>0 3 * * * /usr/local/bin/backup.sh \<br>&nbsp;&nbsp;&amp;&amp; curl -fsS .../ping/YOUR_TOKEN</div>
       <p class="small muted">Only pings on success (<span class="mono">&amp;&amp;</span>). If the backup fails or the box is down, no ping arrives — and we tell you.</p>
       <p class="small muted">Want duration &amp; failure signals too?</p>
       <div class="code mono">curl .../ping/TOKEN/start &nbsp;<span class="muted"># job began</span><br>curl .../ping/TOKEN &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="muted"># success</span><br>curl .../ping/TOKEN/fail &nbsp;<span class="muted"># job reported failure</span></div>

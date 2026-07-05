@@ -68,9 +68,9 @@ th{color:var(--muted);font-weight:600;font-size:12.5px;text-transform:uppercase;
     <h2>2. Endpoints</h2>
     <table>
       <tr><th>Signal</th><th>URL</th><th>Meaning</th></tr>
-      <tr><td>Success</td><td class="mono">https://app.pulsewatch.io/ping/&lt;token&gt;</td><td>Job completed OK. Resets the clock.</td></tr>
-      <tr><td>Start</td><td class="mono">https://app.pulsewatch.io/ping/&lt;token&gt;/start</td><td>Job began (optional — measures duration).</td></tr>
-      <tr><td>Fail</td><td class="mono">https://app.pulsewatch.io/ping/&lt;token&gt;/fail</td><td>Job reported a failure. Alerts immediately.</td></tr>
+      <tr><td>Success</td><td class="mono">https://pulsewatch.maurisis.com/ping/&lt;token&gt;</td><td>Job completed OK. Resets the clock.</td></tr>
+      <tr><td>Start</td><td class="mono">https://pulsewatch.maurisis.com/ping/&lt;token&gt;/start</td><td>Job began (optional — measures duration).</td></tr>
+      <tr><td>Fail</td><td class="mono">https://pulsewatch.maurisis.com/ping/&lt;token&gt;/fail</td><td>Job reported a failure. Alerts immediately.</td></tr>
     </table>
     <p class="muted small">Both <span class="mono">GET</span> and <span class="mono">POST</span> work. A 200 means we recorded it.</p>
   </div>
@@ -78,12 +78,12 @@ th{color:var(--muted);font-weight:600;font-size:12.5px;text-transform:uppercase;
   <div class="section">
     <h2>3. Examples</h2>
     <div class="grid g2">
-      <div><p class="small muted">Cron (only ping on success):</p><div class="code mono">0 3 * * * /path/backup.sh &amp;&amp; \<br>curl -fsS https://app.pulsewatch.io/ping/TOKEN</div></div>
-      <div><p class="small muted">Shell script (report start, success, or failure):</p><div class="code mono">curl -fsS https://app.pulsewatch.io/ping/TOKEN/start<br>if ./job.sh; then<br>&nbsp;&nbsp;curl -fsS https://app.pulsewatch.io/ping/TOKEN<br>else<br>&nbsp;&nbsp;curl -fsS https://app.pulsewatch.io/ping/TOKEN/fail<br>fi</div></div>
-      <div><p class="small muted">Python:</p><div class="code mono">import urllib.request<br>urllib.request.urlopen("https://app.pulsewatch.io/ping/TOKEN", timeout=10)</div></div>
-      <div><p class="small muted">Node.js:</p><div class="code mono">await fetch("https://app.pulsewatch.io/ping/TOKEN")</div></div>
-      <div><p class="small muted">GitHub Actions (last step):</p><div class="code mono">- run: curl -fsS https://app.pulsewatch.io/ping/TOKEN</div></div>
-      <div><p class="small muted">Kubernetes CronJob:</p><div class="code mono">command: ["/bin/sh","-c"]<br>args: ["mytask &amp;&amp; wget -q -O- https://app.pulsewatch.io/ping/TOKEN"]</div></div>
+      <div><p class="small muted">Cron (only ping on success):</p><div class="code mono">0 3 * * * /path/backup.sh &amp;&amp; \<br>curl -fsS https://pulsewatch.maurisis.com/ping/TOKEN</div></div>
+      <div><p class="small muted">Shell script (report start, success, or failure):</p><div class="code mono">curl -fsS https://pulsewatch.maurisis.com/ping/TOKEN/start<br>if ./job.sh; then<br>&nbsp;&nbsp;curl -fsS https://pulsewatch.maurisis.com/ping/TOKEN<br>else<br>&nbsp;&nbsp;curl -fsS https://pulsewatch.maurisis.com/ping/TOKEN/fail<br>fi</div></div>
+      <div><p class="small muted">Python:</p><div class="code mono">import urllib.request<br>urllib.request.urlopen("https://pulsewatch.maurisis.com/ping/TOKEN", timeout=10)</div></div>
+      <div><p class="small muted">Node.js:</p><div class="code mono">await fetch("https://pulsewatch.maurisis.com/ping/TOKEN")</div></div>
+      <div><p class="small muted">GitHub Actions (last step):</p><div class="code mono">- run: curl -fsS https://pulsewatch.maurisis.com/ping/TOKEN</div></div>
+      <div><p class="small muted">Kubernetes CronJob:</p><div class="code mono">command: ["/bin/sh","-c"]<br>args: ["mytask &amp;&amp; wget -q -O- https://pulsewatch.maurisis.com/ping/TOKEN"]</div></div>
     </div>
   </div>
 

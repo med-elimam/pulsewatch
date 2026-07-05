@@ -67,7 +67,7 @@ Put Caddy/nginx in front for TLS, or use `-p 443` with your own certs.
 
 ## After deploy — prove the flow (script included)
 ```bash
-BASE=https://your-live-url ./verify-live.sh
+BASE=https://pulsewatch.maurisis.com ./verify-live.sh
 ```
 It signs up, creates a monitor, pings it UP, uses `/fail` to force DOWN, pings recovery UP, and fires a test alert — printing PASS/FAIL for each. To also prove **scheduler-based** DOWN, it creates a 30s-period monitor and waits ~40s.
 

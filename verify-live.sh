@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Prove the full Pulsewatch flow against a LIVE deployment.
-# Usage: BASE=https://your-live-url ./verify-live.sh [email] [password]
+# Usage: BASE=https://pulsewatch.maurisis.com ./verify-live.sh [email] [password]
 set -u
 BASE="${BASE:?Set BASE to your live URL, e.g. BASE=https://pulsewatch.onrender.com}"
 EMAIL="${1:-verify+$(date +%s)@example.com}"

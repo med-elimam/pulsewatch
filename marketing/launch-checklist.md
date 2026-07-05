@@ -1,7 +1,7 @@
 # Launch checklist (execution order)
 
 ## Before you post anything
-- [ ] Buy a domain (pulsewatch.io / .dev) and point it at the deployment.
+- [x] Domain: live at https://pulsewatch.maurisis.com (set APP_URL to this in production).
 - [ ] Deploy (Render/Fly/VPS — see README). Set SECRET + APP_URL.
 - [ ] Configure email (Resend key or SMTP) + verify a test alert lands.
 - [ ] Create your own real monitor on a real job — dogfood it for a day.

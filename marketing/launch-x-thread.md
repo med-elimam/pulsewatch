@@ -16,7 +16,7 @@ They poll your website and check it responds. But a scheduled job that *never ru
 
 Your job pings a unique URL when it finishes:
 
-curl -fsS app.pulsewatch.io/ping/<token>
+curl -fsS pulsewatch.maurisis.com/ping/<token>
 
 If that ping doesn't arrive on time → it's marked DOWN and you get an email + Slack alert. Silence is the signal.
 

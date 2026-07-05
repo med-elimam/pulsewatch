@@ -94,8 +94,9 @@ function landingPricingSection() {
   </section>`;
 }
 
-export function landing({ user }) {
-  const ping = 'curl -fsS https://app.pulsewatch.io/ping/YOUR_TOKEN';
+export function landing({ user, appUrl }) {
+  const u = (appUrl || 'https://pulsewatch.maurisis.com').replace(/\/$/, '');
+  const ping = `curl -fsS ${u}/ping/YOUR_TOKEN`;
   const body = `
 <section class="hero">
   <span class="kicker">● Know within seconds, not days</span>
@@ -135,7 +136,7 @@ export function landing({ user }) {
     </div>
     <div class="card">
       <p class="small muted" style="margin-top:0">Cron example — one extra step:</p>
-      <div class="code mono"><button class="btn ghost sm copy" data-copy="0 3 * * * /usr/local/bin/backup.sh && curl -fsS https://app.pulsewatch.io/ping/YOUR_TOKEN" onclick="copyText(this)">Copy</button>0 3 * * * /usr/local/bin/backup.sh \\<br>&nbsp;&nbsp;&amp;&amp; curl -fsS .../ping/YOUR_TOKEN</div>
+      <div class="code mono"><button class="btn ghost sm copy" data-copy="0 3 * * * /usr/local/bin/backup.sh && curl -fsS ${esc(u)}/ping/YOUR_TOKEN" onclick="copyText(this)">Copy</button>0 3 * * * /usr/local/bin/backup.sh \\<br>&nbsp;&nbsp;&amp;&amp; curl -fsS .../ping/YOUR_TOKEN</div>
       <p class="small muted">Only pings on success (<span class="mono">&amp;&amp;</span>). If the backup fails or the box is down, no ping arrives — and we tell you.</p>
       <p class="small muted">Want duration &amp; failure signals too?</p>
       <div class="code mono">curl .../ping/TOKEN/start &nbsp;<span class="muted"># job began</span><br>curl .../ping/TOKEN &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="muted"># success</span><br>curl .../ping/TOKEN/fail &nbsp;<span class="muted"># job reported failure</span></div>
@@ -250,7 +251,7 @@ export function pricing({ user, paddle }) {
 }
 
 export function docs({ user, appUrl }) {
-  const u = appUrl || 'https://app.pulsewatch.io';
+  const u = appUrl || 'https://pulsewatch.maurisis.com';
   const body = `
   <section style="padding:44px 0 10px"><h1 style="font-size:34px;margin:0">Documentation</h1>
   <p class="muted">Everything you need to wire up a monitor in under two minutes.</p></section>
@@ -321,7 +322,7 @@ export function authPage({ mode, error, email, next }) {
 // ---- legal pages (Terms, Privacy, Refunds) ----
 export function legalPage({ kind, user, company, email, effective }) {
   const C = company || 'Pulsewatch';
-  const E = email || 'support@pulsewatch.io';
+  const E = email || 'support@maurisis.com';
   const D = effective || new Date().toISOString().slice(0, 10);
   const wrap = (title, html) => layout({ title: `${title} — ${C}`, user, body:
     `<section style="padding:44px 0 8px"><h1 style="font-size:32px;margin:0">${title}</h1>
