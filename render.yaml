@@ -1,0 +1,29 @@
+# Render.com blueprint — deploy: New > Blueprint > pick this repo.
+# Uses a PERSISTENT DISK so the SQLite DB survives restarts/redeploys.
+services:
+  - type: web
+    name: pulsewatch
+    runtime: node
+    plan: starter            # 'starter' (paid) is required to attach a Persistent Disk
+    buildCommand: ""         # zero dependencies — nothing to build
+    startCommand: node --no-warnings server.js
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_VERSION
+        value: 22.22.3        # pinned exact tested version
+      - key: NODE_ENV
+        value: production
+      - key: SECRET
+        generateValue: true   # Render generates a strong random secret
+      - key: APP_URL
+        sync: false           # set to your public URL after first deploy, e.g. https://pulsewatch.onrender.com
+      - key: DB_PATH
+        value: /var/data/pulsewatch.db   # points INTO the persistent disk below
+      - key: RESEND_API_KEY
+        sync: false           # paste your Resend key in the dashboard
+      - key: MAIL_FROM
+        sync: false           # e.g. "Pulsewatch <alerts@yourdomain.com>" (or onboarding@resend.dev to test)
+    disk:
+      name: pulsewatch-data
+      mountPath: /var/data    # PERSISTENT — DB_PATH lives here
+      sizeGB: 1

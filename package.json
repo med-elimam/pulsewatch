@@ -1,0 +1,14 @@
+{
+  "name": "pulsewatch",
+  "version": "1.0.0",
+  "description": "Dead man's switch for cron jobs. Get alerted the second a scheduled task stops running.",
+  "type": "module",
+  "engines": {
+    "node": "22.22.3"
+  },
+  "scripts": {
+    "start": "node --no-warnings server.js",
+    "test": "node --no-warnings tests/flow-test.js"
+  },
+  "license": "MIT"
+}

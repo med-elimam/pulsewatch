@@ -1,0 +1,21 @@
+# Fly.io — deploy: fly launch --copy-config --now ; then set secrets (see DEPLOY.md).
+app = "pulsewatch"
+primary_region = "iad"
+[build]
+  dockerfile = "Dockerfile"   # pinned node:22.22.3-alpine
+[env]
+  NODE_ENV = "production"
+  PORT = "3000"
+  DB_PATH = "/data/pulsewatch.db"   # persistent volume mount below
+[[mounts]]
+  source = "pulsewatch_data"
+  destination = "/data"
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = false
+  min_machines_running = 1
+[[http_service.checks]]
+  path = "/healthz"
+  interval = "30s"
+  timeout = "5s"
