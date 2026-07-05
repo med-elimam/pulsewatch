@@ -95,10 +95,9 @@ th{color:var(--muted);font-weight:600;font-size:12.5px;text-transform:uppercase;
       <button class="btn" style="width:100%;margin-top:16px" onclick="paddleBuy('')">Upgrade to Team</button>
     </div></div>
     <p class="center muted small" style="margin-top:20px">Taxes may apply and will be calculated at checkout.</p>
-    <p class="center small" style="color:var(--amber);margin-top:6px">Paddle checkout is being activated. Contact <a href="/contact">support</a> to upgrade.</p>
     <p class="center muted small" style="margin-top:10px">Billed monthly. Cancel anytime. Payments are processed by <strong>Paddle</strong>, our merchant of record. See our <a href="/refund">Refund Policy</a>.</p>
   </section>
-  <script>function paddleBuy(pid){alert("Paddle checkout is being activated. Contact support to upgrade.");window.location='/contact';}</script></div>
+  <script>function paddleBuy(pid){window.location='/contact';}</script></div>
 <div class="wrap"><div class="footer"><div>© 2026 Pulsewatch — a dead man's switch for scheduled jobs.</div><div><a href="/pricing">Pricing</a> · <a href="/docs">Docs</a> · <a href="/terms">Terms</a> · <a href="/privacy">Privacy</a> · <a href="/refund">Refund Policy</a> · <a href="/contact">Contact</a></div></div></div>
 <script>
 function copyText(el){const t=el.getAttribute('data-copy');navigator.clipboard.writeText(t).then(()=>{const o=el.textContent;el.textContent='Copied!';setTimeout(()=>el.textContent=o,1200)})}

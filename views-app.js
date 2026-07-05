@@ -214,7 +214,6 @@ export function billingPage({ user, count, paddle }) {
     <h3 style="margin-top:0">Plans</h3>
     <div class="grid g4">${planCards}</div>
     <p class="muted small" style="margin-top:16px">${TAX_NOTE}</p>
-    ${(!paddle || !paddle.configured) ? `<p class="small" style="color:var(--amber);margin-top:4px">Paddle checkout is being activated. Contact <a href="/contact">support</a> to upgrade.</p>` : ''}
     <p class="muted small" style="margin-top:8px">Payments are processed by <strong>Paddle</strong>, our merchant of record. See our <a href="/refund">Refund Policy</a>.</p>
   </div>
   ${paddleScript(paddle)}`;

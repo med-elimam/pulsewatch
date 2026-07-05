@@ -178,14 +178,13 @@ ${landingPricingSection()}
 }
 
 
-const PADDLE_NOT_READY = 'Paddle checkout is being activated. Contact support to upgrade.';
 export function paddleScript(paddle) {
   if (paddle && paddle.configured) {
     return `<script src="https://cdn.paddle.com/paddle/v2/paddle.js"><\/script>
 <script>try{Paddle.Environment.set(${JSON.stringify(paddle.env || 'production')});Paddle.Initialize({token:${JSON.stringify(paddle.clientToken || '')}});}catch(e){console.error('Paddle init',e);}
-function paddleBuy(pid){if(!pid){alert(${JSON.stringify(PADDLE_NOT_READY)});window.location='/contact';return;}try{Paddle.Checkout.open({items:[{priceId:pid,quantity:1}]});}catch(e){window.location='/contact';}}<\/script>`;
+function paddleBuy(pid){if(!pid){window.location='/contact';return;}try{Paddle.Checkout.open({items:[{priceId:pid,quantity:1}]});}catch(e){window.location='/contact';}}<\/script>`;
   }
-  return `<script>function paddleBuy(pid){alert(${JSON.stringify(PADDLE_NOT_READY)});window.location='/contact';}<\/script>`;
+  return `<script>function paddleBuy(pid){window.location='/contact';}<\/script>`;
 }
 export function checkoutButton(plan, paddle, cls) {
   cls = cls || 'btn';
@@ -212,7 +211,6 @@ export function pricing({ user, paddle }) {
   <section style="padding-bottom:12px">
     <div class="grid g4">${cols}</div>
     <p class="center muted small" style="margin-top:20px">${TAX_NOTE}</p>
-    ${(!paddle || !paddle.configured) ? `<p class="center small" style="color:var(--amber);margin-top:6px">Paddle checkout is being activated. Contact <a href="/contact">support</a> to upgrade.</p>` : ''}
     <p class="center muted small" style="margin-top:10px">Billed monthly. Cancel anytime. Payments are processed by <strong>Paddle</strong>, our merchant of record. See our <a href="/refund">Refund Policy</a>.</p>
   </section>
   ${paddleScript(paddle)}`;
