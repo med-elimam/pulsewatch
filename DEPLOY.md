@@ -73,3 +73,16 @@ It signs up, creates a monitor, pings it UP, uses `/fail` to force DOWN, pings r
 
 ## Custom domain
 Point a CNAME/A record at your host, add the domain in the host dashboard, then set `APP_URL` to the custom domain and redeploy so ping URLs/emails use it.
+
+---
+
+## Email deliverability (avoid the spam folder)
+The alert templates are already spam-conscious: plain transactional subjects (`[Pulsewatch] Monitor down: <name>`), no emoji, professional English, and both plain-text and HTML parts. The remaining factors are on the sending domain — do these in Resend:
+
+1. **Verify your own domain** in Resend and send `MAIL_FROM` from it (e.g. `Pulsewatch <alerts@yourdomain.com>`). Avoid `onboarding@resend.dev` for real traffic — shared/test senders land in spam more often.
+2. **Add the DNS records Resend gives you: SPF, DKIM, and DMARC.** DKIM especially is what Gmail checks; without it, expect spam placement. DMARC (`v=DMARC1; p=none; rua=mailto:you@yourdomain.com`) is enough to start.
+3. **Use a subdomain for alerts** (e.g. `mail.yourdomain.com`) so monitoring email doesn't affect your main domain reputation.
+4. Optionally set `MAIL_REPLY_TO` to a real inbox — a valid Reply-To improves trust.
+5. After DNS verifies, send the **test alert** again and, in Gmail, use "Report not spam" once — reputation builds quickly for low-volume transactional mail.
+
+These are DNS/provider steps only; no code change is needed.
