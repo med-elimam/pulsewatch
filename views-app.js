@@ -216,6 +216,7 @@ export function billingPage({ user, count, paddle }) {
     <p class="muted small" style="margin-top:16px">${TAX_NOTE}</p>
     <p class="muted small" style="margin-top:8px">Payments are processed by <strong>Paddle</strong>, our merchant of record. See our <a href="/refund">Refund Policy</a>.</p>
   </div>
+  <p id="pw-error" class="center" style="display:none;color:var(--red);margin-top:12px"></p>
   ${paddleScript(paddle)}`;
   return layout({ title: 'Billing — Pulsewatch', user, body });
 }

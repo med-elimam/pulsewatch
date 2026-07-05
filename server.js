@@ -14,17 +14,66 @@ if (SECRET === 'dev-insecure-secret-change-me' && process.env.NODE_ENV === 'prod
 const FREE_LIMIT = 5;
 const COMPANY_NAME = process.env.COMPANY_NAME || 'Pulsewatch';
 const LEGAL_EMAIL = process.env.LEGAL_EMAIL || 'support@maurisis.com';
-function paddleConfig() {
+function priceIds() {
+  return {
+    starter: process.env.PADDLE_STARTER_PRICE_ID || '',
+    pro: process.env.PADDLE_PRO_PRICE_ID || '',
+    team: process.env.PADDLE_TEAM_PRICE_ID || '',
+  };
+}
+function paddleConfig(user) {
   return {
     configured: !!process.env.PADDLE_CLIENT_TOKEN,
     env: process.env.PADDLE_ENV || 'production',
     clientToken: process.env.PADDLE_CLIENT_TOKEN || '',
-    priceIds: {
-      starter: process.env.PADDLE_STARTER_PRICE_ID || '',
-      pro: process.env.PADDLE_PRO_PRICE_ID || '',
-      team: process.env.PADDLE_TEAM_PRICE_ID || '',
-    },
+    priceIds: priceIds(),
+    userId: user ? user.id : '',
+    userEmail: user ? user.email : '',
   };
+}
+function priceToPlan(pid) {
+  if (!pid) return null;
+  const m = priceIds();
+  if (pid === m.starter) return 'starter';
+  if (pid === m.pro) return 'pro';
+  if (pid === m.team) return 'team';
+  return null;
+}
+function verifyPaddleSignature(rawBody, sigHeader) {
+  const secret = process.env.PADDLE_WEBHOOK_SECRET;
+  if (!secret || !sigHeader) return false;
+  const parts = {};
+  String(sigHeader).split(';').forEach(kv => { const i = kv.indexOf('='); if (i > 0) parts[kv.slice(0, i).trim()] = kv.slice(i + 1).trim(); });
+  if (!parts.ts || !parts.h1) return false;
+  const digest = createHmac('sha256', secret).update(parts.ts + ':' + rawBody).digest('hex');
+  try { return digest.length === parts.h1.length && timingSafeEqual(Buffer.from(digest), Buffer.from(parts.h1)); } catch { return false; }
+}
+function applyPaddleEvent(evt) {
+  const type = evt.event_type || evt.eventType; const d = evt.data || {};
+  const cd = d.custom_data || d.customData || {};
+  const customerId = d.customer_id || null;
+  const isSub = String(type).startsWith('subscription');
+  const subId = isSub ? d.id : (d.subscription_id || null);
+  let user = cd.user_id ? db.getUserById(cd.user_id) : null;
+  if (!user && subId) user = db.getUserBySubscriptionId(subId);
+  if (!user && customerId) user = db.getUserByCustomerId(customerId);
+  if (!user) { console.log('[paddle] event', type, '- no matching user (customer', customerId, ')'); return { ok: false, reason: 'no user' }; }
+
+  if (type === 'subscription.canceled') {
+    db.updateUserBilling(user.id, { plan: 'free', billing_status: 'canceled' });
+    console.log('[paddle] subscription.canceled -> user', user.id, 'downgraded to free');
+    return { ok: true };
+  }
+  const items = d.items || [];
+  const pid = items.length ? (items[0].price ? items[0].price.id : items[0].price_id) : null;
+  const plan = priceToPlan(pid);
+  const fields = { billing_status: d.status || 'active' };
+  if (plan) fields.plan = plan;
+  if (customerId) fields.paddle_customer_id = customerId;
+  if (subId) fields.paddle_subscription_id = subId;
+  db.updateUserBilling(user.id, fields);
+  console.log('[paddle]', type, '-> user', user.id, 'plan', plan || '(unchanged)', 'status', fields.billing_status);
+  return { ok: true, plan };
 }
 
 // ---------- helpers ----------
@@ -82,6 +131,7 @@ function sameOrigin(req) { // basic CSRF guard for state-changing app routes
   try { return new URL(o).host === req.headers.host; } catch { return false; }
 }
 const validEmail = (e) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(e || ''));
+const safeNext = (n) => (typeof n === 'string' && n.startsWith('/') && !n.startsWith('//') ? n : '/app');
 
 // ---------- ping / state transitions ----------
 function armNextDue(m, t = db.now()) { return t + (m.period_seconds + m.grace_seconds) * 1000; }
@@ -162,39 +212,81 @@ const server = http.createServer(async (req, res) => {
       return handlePing(req, res, pm[1], pm[3] || 'success');
     }
 
+    // Paddle webhook (public, verified by signature). Must read the RAW body.
+    if (path === '/webhooks/paddle' && method === 'POST') {
+      const raw = await new Promise((resolve) => { let b = ''; req.on('data', c => { b += c; if (b.length > 1e6) req.destroy(); }); req.on('end', () => resolve(b)); });
+      const sig = req.headers['paddle-signature'];
+      if (process.env.PADDLE_WEBHOOK_SECRET && !verifyPaddleSignature(raw, sig)) {
+        console.warn('[paddle] webhook signature verification FAILED');
+        return json(res, 400, { ok: false, error: 'invalid signature' });
+      }
+      let evt; try { evt = JSON.parse(raw || '{}'); } catch { return json(res, 400, { ok: false, error: 'bad json' }); }
+      const type = evt.event_type || '';
+      if (['transaction.completed', 'subscription.created', 'subscription.updated', 'subscription.canceled'].includes(type)) {
+        try { applyPaddleEvent(evt); } catch (e) { console.error('[paddle] handler error', e.message); }
+      } else {
+        console.log('[paddle] ignored event', type);
+      }
+      return json(res, 200, { ok: true });
+    }
+
     const user = currentUser(req);
 
     // public pages
     if (path === '/' && method === 'GET') return send(res, 200, landing({ user }));
-    if (path === '/pricing' && method === 'GET') return send(res, 200, pricing({ user, paddle: paddleConfig() }));
+    if (path === '/pricing' && method === 'GET') return send(res, 200, pricing({ user, paddle: paddleConfig(user) }));
     if (path === '/docs' && method === 'GET') return send(res, 200, docs({ user, appUrl: app }));
     if (method === 'GET' && ['/terms', '/privacy', '/refund', '/contact'].includes(path)) {
       const kind = path.slice(1); // terms | privacy | refund | contact
       return send(res, 200, legalPage({ kind, user, company: COMPANY_NAME, email: LEGAL_EMAIL }));
     }
     if (method === 'GET' && path === '/refunds') return redirect(res, '/refund'); // legacy alias
-    if (path === '/billing') {
-      if (!user) return redirect(res, '/login');
-      return send(res, 200, billingPage({ user, count: db.countMonitors(user.id), paddle: paddleConfig() }));
+    if (path === '/billing' && method === 'GET') {
+      if (!user) return redirect(res, '/login?next=/billing');
+      return send(res, 200, billingPage({ user, count: db.countMonitors(user.id), paddle: paddleConfig(user) }));
+    }
+    if (path === '/debug/billing' && method === 'GET') {
+      if (!user) return redirect(res, '/login?next=/debug/billing');
+      return json(res, 200, {
+        paddleEnv: process.env.PADDLE_ENV || 'production',
+        hasClientToken: !!process.env.PADDLE_CLIENT_TOKEN,
+        hasStarterPriceId: !!process.env.PADDLE_STARTER_PRICE_ID,
+        hasProPriceId: !!process.env.PADDLE_PRO_PRICE_ID,
+        hasTeamPriceId: !!process.env.PADDLE_TEAM_PRICE_ID,
+        hasApiKey: !!process.env.PADDLE_API_KEY,
+        hasWebhookSecret: !!process.env.PADDLE_WEBHOOK_SECRET,
+      });
+    }
+    if (path === '/billing/checkout' && method === 'POST') {
+      if (!user) return json(res, 401, { ok: false, error: 'login required' });
+      if (!sameOrigin(req)) return json(res, 403, { ok: false, error: 'bad origin' });
+      const b = await readBody(req);
+      const plan = b.plan;
+      const pid = priceIds()[plan];
+      if (!['starter', 'pro', 'team'].includes(plan)) return json(res, 400, { ok: false, error: 'unknown plan' });
+      if (!process.env.PADDLE_CLIENT_TOKEN) return json(res, 503, { ok: false, error: 'missing client token' });
+      if (!pid) return json(res, 503, { ok: false, error: 'missing price id for ' + plan });
+      // Client-side checkout: return the public config the browser needs to open Paddle.
+      return json(res, 200, { ok: true, plan, priceId: pid, clientToken: process.env.PADDLE_CLIENT_TOKEN, env: process.env.PADDLE_ENV || 'production', customData: { user_id: user.id }, customerEmail: user.email });
     }
 
     // auth
-    if (path === '/signup' && method === 'GET') return send(res, user ? 302 : 200, user ? '' : authPage({ mode: 'signup' }), user ? { Location: '/app' } : {});
-    if (path === '/login' && method === 'GET') return send(res, user ? 302 : 200, user ? '' : authPage({ mode: 'login' }), user ? { Location: '/app' } : {});
+    if (path === '/signup' && method === 'GET') return send(res, user ? 302 : 200, user ? '' : authPage({ mode: 'signup', next: url.searchParams.get('next') }), user ? { Location: '/app' } : {});
+    if (path === '/login' && method === 'GET') return send(res, user ? 302 : 200, user ? '' : authPage({ mode: 'login', next: url.searchParams.get('next') }), user ? { Location: '/app' } : {});
     if (path === '/signup' && method === 'POST') {
       const b = await readBody(req);
       if (!validEmail(b.email)) return send(res, 400, authPage({ mode: 'signup', error: 'Enter a valid email.', email: b.email }));
       if (!b.password || b.password.length < 8) return send(res, 400, authPage({ mode: 'signup', error: 'Password must be at least 8 characters.', email: b.email }));
       if (db.getUserByEmail(b.email)) return send(res, 400, authPage({ mode: 'signup', error: 'That email already has an account. Try logging in.', email: b.email }));
       const u = db.createUser(b.email, b.password);
-      return redirect(res, '/app', sessionCookie(sign(u.id), 7 * 86400));
+      return redirect(res, safeNext(b.next), sessionCookie(sign(u.id), 7 * 86400));
     }
     if (path === '/login' && method === 'POST') {
       const b = await readBody(req);
       const u = db.getUserByEmail(b.email || '');
       if (!u || !db.verifyPassword(b.password || '', u.pw_salt, u.pw_hash))
         return send(res, 401, authPage({ mode: 'login', error: 'Wrong email or password.', email: b.email }));
-      return redirect(res, '/app', sessionCookie(sign(u.id), 7 * 86400));
+      return redirect(res, safeNext(b.next), sessionCookie(sign(u.id), 7 * 86400));
     }
     if (path === '/logout' && method === 'POST') return redirect(res, '/', sessionCookie('', 0));
 

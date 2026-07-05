@@ -179,12 +179,43 @@ ${landingPricingSection()}
 
 
 export function paddleScript(paddle) {
-  if (paddle && paddle.configured) {
-    return `<script src="https://cdn.paddle.com/paddle/v2/paddle.js"><\/script>
-<script>try{Paddle.Environment.set(${JSON.stringify(paddle.env || 'production')});Paddle.Initialize({token:${JSON.stringify(paddle.clientToken || '')}});}catch(e){console.error('Paddle init',e);}
-function paddleBuy(pid){if(!pid){window.location='/contact';return;}try{Paddle.Checkout.open({items:[{priceId:pid,quantity:1}]});}catch(e){window.location='/contact';}}<\/script>`;
+  const cfg = {
+    env: (paddle && paddle.env) || 'production',
+    token: (paddle && paddle.clientToken) || '',
+    userId: (paddle && paddle.userId) || '',
+    email: (paddle && paddle.userEmail) || '',
+  };
+  return `<script>window.__PW = ${JSON.stringify(cfg)};<\/script>
+<script src="https://cdn.paddle.com/paddle/v2/paddle.js"><\/script>
+<script>
+(function(){
+  var C = window.__PW || {};
+  function showErr(msg){ var e=document.getElementById('pw-error'); if(e){ e.textContent=msg; e.style.display='block'; } else { alert(msg); } }
+  function ready(){
+    if (typeof Paddle === 'undefined') { window.__pwPaddleFailed = true; return; }
+    try {
+      if (C.env === 'sandbox') Paddle.Environment.set('sandbox');
+      Paddle.Initialize({ token: C.token });
+      window.__pwPaddleInit = true;
+    } catch(e){ window.__pwPaddleInit = false; window.__pwPaddleErr = String(e && e.message || e); }
   }
-  return `<script>function paddleBuy(pid){window.location='/contact';}<\/script>`;
+  window.paddleBuy = function(priceId){
+    var e=document.getElementById('pw-error'); if(e){ e.style.display='none'; }
+    if (!C.token) { showErr('Checkout unavailable: missing Paddle client token.'); return; }
+    if (typeof Paddle === 'undefined' || window.__pwPaddleFailed) { showErr('Checkout unavailable: Paddle.js failed to load. Check your network or ad blocker and retry.'); return; }
+    if (!window.__pwPaddleInit) { ready(); }
+    if (!window.__pwPaddleInit) { showErr('Checkout unavailable: Paddle failed to initialize' + (window.__pwPaddleErr ? ' (' + window.__pwPaddleErr + ')' : '') + '.'); return; }
+    if (!priceId) { showErr('Checkout unavailable: this plan has no price ID configured on the server.'); return; }
+    if (!C.userId) { window.location = '/signup?next=/billing'; return; }
+    try {
+      var opts = { items: [{ priceId: priceId, quantity: 1 }], customData: { user_id: C.userId } };
+      if (C.email) opts.customer = { email: C.email };
+      Paddle.Checkout.open(opts);
+    } catch(err){ showErr('Checkout failed to open: ' + String(err && err.message || err)); }
+  };
+  ready();
+})();
+<\/script>`;
 }
 export function checkoutButton(plan, paddle, cls) {
   cls = cls || 'btn';
@@ -213,6 +244,7 @@ export function pricing({ user, paddle }) {
     <p class="center muted small" style="margin-top:20px">${TAX_NOTE}</p>
     <p class="center muted small" style="margin-top:10px">Billed monthly. Cancel anytime. Payments are processed by <strong>Paddle</strong>, our merchant of record. See our <a href="/refund">Refund Policy</a>.</p>
   </section>
+  <p id="pw-error" class="center" style="display:none;color:var(--red);margin-top:12px;max-width:640px;margin-left:auto;margin-right:auto"></p>
   ${paddleScript(paddle)}`;
   return layout({ title: 'Pricing &mdash; Pulsewatch', user, body });
 }
@@ -263,7 +295,7 @@ export function docs({ user, appUrl }) {
   return layout({ title: 'Docs — Pulsewatch', user, body });
 }
 
-export function authPage({ mode, error, email }) {
+export function authPage({ mode, error, email, next }) {
   const isLogin = mode === 'login';
   const body = `
   <div class="form">
@@ -271,6 +303,7 @@ export function authPage({ mode, error, email }) {
     <p class="center muted small">${isLogin ? 'Welcome back.' : 'Free forever for up to 3 monitors. No card needed.'}</p>
     ${error ? `<div class="err">${esc(error)}</div>` : ''}
     <form method="post" action="/${isLogin ? 'login' : 'signup'}">
+      ${next ? `<input type="hidden" name="next" value="${esc(next)}">` : ''}
       <label>Email</label>
       <input name="email" type="email" required autofocus value="${esc(email || '')}" placeholder="you@company.com">
       <label>Password</label>

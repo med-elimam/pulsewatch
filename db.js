@@ -18,6 +18,9 @@ CREATE TABLE IF NOT EXISTS users (
   pw_salt       TEXT NOT NULL,
   pw_hash       TEXT NOT NULL,
   plan          TEXT NOT NULL DEFAULT 'free',
+  paddle_customer_id     TEXT,
+  paddle_subscription_id TEXT,
+  billing_status         TEXT NOT NULL DEFAULT 'none',
   created_at    INTEGER NOT NULL
 );
 
@@ -56,6 +59,9 @@ CREATE TABLE IF NOT EXISTS upgrade_requests (
 `);
 
 try { db.exec('ALTER TABLE monitors ADD COLUMN last_start_at INTEGER'); } catch {}
+try { db.exec("ALTER TABLE users ADD COLUMN paddle_customer_id TEXT"); } catch {}
+try { db.exec("ALTER TABLE users ADD COLUMN paddle_subscription_id TEXT"); } catch {}
+try { db.exec("ALTER TABLE users ADD COLUMN billing_status TEXT NOT NULL DEFAULT 'none'"); } catch {}
 
 export const now = () => Date.now();
 
@@ -129,3 +135,15 @@ export function recordUpgrade(userId, plan) {
   db.prepare('INSERT INTO upgrade_requests (id,user_id,plan,created_at) VALUES (?,?,?,?)')
     .run(randomUUID(), userId, plan, now());
 }
+
+// ---------- billing ----------
+export function updateUserBilling(userId, fields) {
+  const keys = Object.keys(fields);
+  if (!keys.length) return;
+  const set = keys.map(k => `${k} = ?`).join(', ');
+  db.prepare(`UPDATE users SET ${set} WHERE id = ?`).run(...keys.map(k => fields[k]), userId);
+}
+export const getUserBySubscriptionId = (sid) =>
+  db.prepare('SELECT * FROM users WHERE paddle_subscription_id = ?').get(sid);
+export const getUserByCustomerId = (cid) =>
+  db.prepare('SELECT * FROM users WHERE paddle_customer_id = ?').get(cid);
