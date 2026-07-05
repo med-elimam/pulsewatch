@@ -5,10 +5,10 @@ export const TAX_NOTE = 'Taxes may apply and will be calculated at checkout.';
 
 export const PLANS = [
   {
-    id: 'free', name: 'Free', price: 0, monitors: 3,
+    id: 'free', name: 'Free', price: 0, monitors: 1,
     blurb: 'Good for testing and personal jobs',
     cta: 'Start free',
-    features: ['3 monitors', 'Email alerts', 'Basic cron heartbeat monitoring', 'Alert history'],
+    features: ['1 monitor', 'Email alerts', 'Basic cron heartbeat monitoring', 'Alert history'],
   },
   {
     id: 'starter', name: 'Starter', price: 5, monitors: 25,

@@ -67,9 +67,9 @@ th{color:var(--muted);font-weight:600;font-size:12.5px;text-transform:uppercase;
     </div>
     <div class="card">
       <h3 style="margin-top:0">Monitor usage</h3>
-      <div style="font-size:22px;font-weight:700">2 <span class="muted" style="font-size:15px;font-weight:400">of 3 monitors</span></div>
-      <div style="height:8px;background:var(--panel2);border-radius:999px;margin:12px 0;overflow:hidden"><div style="width:67%;height:100%;background:var(--brand)"></div></div>
-      <p class="muted small" style="margin:0">You can add 1 more monitor(s) on the Free plan.</p>
+      <div style="font-size:22px;font-weight:700">1 <span class="muted" style="font-size:15px;font-weight:400">of 1 monitors</span></div>
+      <div style="height:8px;background:var(--panel2);border-radius:999px;margin:12px 0;overflow:hidden"><div style="width:100%;height:100%;background:var(--red)"></div></div>
+      <p class="muted small" style="margin:0">You have reached your plan limit. Upgrade to add more monitors.</p>
     </div>
   </div>
   <div class="card" style="margin-top:18px">
@@ -77,28 +77,59 @@ th{color:var(--muted);font-weight:600;font-size:12.5px;text-transform:uppercase;
     <div class="grid g4"><div class="card" style="">
       <h3 style="margin:0 0 2px">Free <span class="pill" style="color:var(--green);border-color:var(--green)">Current</span></h3>
       <div class="price" style="margin:4px 0 6px"><span class="amt" style="font-size:26px">$0</span><span class="per">/month</span></div>
-      <p class="muted small" style="margin:0 0 8px">3 monitors</p>
+      <p class="muted small" style="margin:0 0 8px">1 monitors</p>
       <div class="btn ghost sm" style="width:100%;text-align:center;opacity:.7;cursor:default">Current plan</div>
     </div><div class="card" style="">
       <h3 style="margin:0 0 2px">Starter</h3>
       <div class="price" style="margin:4px 0 6px"><span class="amt" style="font-size:26px">$5</span><span class="per">/month</span></div>
       <p class="muted small" style="margin:0 0 8px">25 monitors</p>
-      <button class="btn sm" style="width:100%;margin-top:16px" onclick="paddleBuy('')">Upgrade to Starter</button>
+      <button class="btn sm" style="width:100%;margin-top:16px" onclick="paddleBuy('pri_s')">Upgrade to Starter</button>
     </div><div class="card" style="border-color:var(--brand)">
       <h3 style="margin:0 0 2px">Pro</h3>
       <div class="price" style="margin:4px 0 6px"><span class="amt" style="font-size:26px">$12</span><span class="per">/month</span></div>
       <p class="muted small" style="margin:0 0 8px">100 monitors</p>
-      <button class="btn sm" style="width:100%;margin-top:16px" onclick="paddleBuy('')">Upgrade to Pro</button>
+      <button class="btn sm" style="width:100%;margin-top:16px" onclick="paddleBuy('pri_p')">Upgrade to Pro</button>
     </div><div class="card" style="">
       <h3 style="margin:0 0 2px">Team</h3>
       <div class="price" style="margin:4px 0 6px"><span class="amt" style="font-size:26px">$29</span><span class="per">/month</span></div>
       <p class="muted small" style="margin:0 0 8px">500 monitors</p>
-      <button class="btn sm" style="width:100%;margin-top:16px" onclick="paddleBuy('')">Upgrade to Team</button>
+      <button class="btn sm" style="width:100%;margin-top:16px" onclick="paddleBuy('pri_t')">Upgrade to Team</button>
     </div></div>
     <p class="muted small" style="margin-top:16px">Taxes may apply and will be calculated at checkout.</p>
     <p class="muted small" style="margin-top:8px">Payments are processed by <strong>Paddle</strong>, our merchant of record. See our <a href="/refund">Refund Policy</a>.</p>
   </div>
-  <script>function paddleBuy(pid){window.location='/contact';}</script></div>
+  <p id="pw-error" class="center" style="display:none;color:var(--red);margin-top:12px"></p>
+  <script>window.__PW = {"env":"production","token":"live_xxx","userId":"u1","email":"you@company.com"};</script>
+<script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
+<script>
+(function(){
+  var C = window.__PW || {};
+  function showErr(msg){ var e=document.getElementById('pw-error'); if(e){ e.textContent=msg; e.style.display='block'; } else { alert(msg); } }
+  function ready(){
+    if (typeof Paddle === 'undefined') { window.__pwPaddleFailed = true; return; }
+    try {
+      if (C.env === 'sandbox') Paddle.Environment.set('sandbox');
+      Paddle.Initialize({ token: C.token });
+      window.__pwPaddleInit = true;
+    } catch(e){ window.__pwPaddleInit = false; window.__pwPaddleErr = String(e && e.message || e); }
+  }
+  window.paddleBuy = function(priceId){
+    var e=document.getElementById('pw-error'); if(e){ e.style.display='none'; }
+    if (!C.token) { showErr('Checkout unavailable: missing Paddle client token.'); return; }
+    if (typeof Paddle === 'undefined' || window.__pwPaddleFailed) { showErr('Checkout unavailable: Paddle.js failed to load. Check your network or ad blocker and retry.'); return; }
+    if (!window.__pwPaddleInit) { ready(); }
+    if (!window.__pwPaddleInit) { showErr('Checkout unavailable: Paddle failed to initialize' + (window.__pwPaddleErr ? ' (' + window.__pwPaddleErr + ')' : '') + '.'); return; }
+    if (!priceId) { showErr('Checkout unavailable: this plan has no price ID configured on the server.'); return; }
+    if (!C.userId) { window.location = '/signup?next=/billing'; return; }
+    try {
+      var opts = { items: [{ priceId: priceId, quantity: 1 }], customData: { user_id: C.userId } };
+      if (C.email) opts.customer = { email: C.email };
+      Paddle.Checkout.open(opts);
+    } catch(err){ showErr('Checkout failed to open: ' + String(err && err.message || err)); }
+  };
+  ready();
+})();
+</script></div>
 <div class="wrap"><div class="footer"><div>© 2026 Pulsewatch — a dead man's switch for scheduled jobs.</div><div><a href="/pricing">Pricing</a> · <a href="/docs">Docs</a> · <a href="/terms">Terms</a> · <a href="/privacy">Privacy</a> · <a href="/refund">Refund Policy</a> · <a href="/contact">Contact</a></div></div></div>
 <script>
 function copyText(el){const t=el.getAttribute('data-copy');navigator.clipboard.writeText(t).then(()=>{const o=el.textContent;el.textContent='Copied!';setTimeout(()=>el.textContent=o,1200)})}

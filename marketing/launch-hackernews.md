@@ -9,7 +9,7 @@ I kept getting burned by scheduled jobs that failed *silently* — a backup that
 
 Pulsewatch is the inverse: your job pings a unique URL when it finishes (`curl -fsS $URL/ping/<token>`), and if that ping doesn't arrive within the period + grace you set, it flags the monitor as down and emails/Slacks you. Next ping = auto-recovery + all-clear. It only alerts on state changes, so no spam.
 
-Deliberately boring tech: a single Node process, the built-in `node:sqlite`, no third-party npm deps, server-rendered HTML. You can `node server.js` and self-host it, or use the hosted version. Free tier is 5 monitors.
+Deliberately boring tech: a single Node process, the built-in `node:sqlite`, no third-party npm deps, server-rendered HTML. You can `node server.js` and self-host it, or use the hosted version. Free tier is 1 monitor.
 
 Things I'd love feedback on:
 - The period+grace model vs. full cron-expression parsing — is simple enough, or do you want exact schedule matching?

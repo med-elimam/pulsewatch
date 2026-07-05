@@ -96,7 +96,7 @@ Plans (must match Paddle exactly):
 
 | Plan | Price | Monitors |
 |------|-------|----------|
-| Free | $0/month | 3 |
+| Free | $0/month | 1 |
 | Starter | $5/month | 25 |
 | Pro | $12/month | 100 |
 | Team | $29/month | 500 |

@@ -22,7 +22,7 @@ Passwords are scrypt-hashed with per-user salts. Sessions are signed HttpOnly co
 Yes. It's a single Node process with an embedded SQLite database and no third-party dependencies. `node server.js` and you're running.
 
 **What happens when I hit the free limit?**
-Free covers 5 monitors. Beyond that you upgrade to Pro ($5/mo, 50 monitors) or Team ($19/mo, unlimited + seats).
+Free covers 1 monitor. Paid plans are Starter $5/month (25 monitors), Pro $12/month (100 monitors), and Team $29/month (500 monitors).
 
 **Do you support Kubernetes CronJobs / GitHub Actions / systemd / Windows Task Scheduler?**
 Anything that can make an HTTP request can ping. Docs include copy-paste examples for all of these.

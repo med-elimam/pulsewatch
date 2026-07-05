@@ -73,6 +73,13 @@ ok((await monitorStatusFromDetail(id)) === 'up', 'recovery ping -> UP again');
 r = await req('/app/m/' + id);
 ok(/Recovered/.test(r.text) && /Went DOWN/.test(r.text), 'event history records DOWN and Recovered');
 
+// 9b. Free plan allows only ONE monitor — second create is blocked until upgrade
+const uid = db.getUserByEmail('founder@test.com').id;
+let blocked = await req('/app/new', { method: 'POST', form: { name: 'Blocked', period: '3600', grace: '300' } });
+ok(/plan allows 1 monitor/.test(blocked.text), 'Free plan enforces 1-monitor limit');
+db.updateUserBilling(uid, { plan: 'pro' });
+ok(db.getUserById(uid).plan === 'pro', 'plan upgrade lifts the limit');
+
 // 10. explicit /fail signal on a second monitor
 r = await req('/app/new', { method: 'POST', form: { name: 'Report Job', period: '3600', grace: '300' } });
 const id2 = r.loc.split('/').pop();

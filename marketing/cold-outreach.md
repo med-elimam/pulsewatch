@@ -9,7 +9,7 @@ Hi {First},
 
 Quick one — {Company} runs on scheduled jobs (backups, reports, syncs). Most teams your size don't find out one silently stopped until a customer or a failed restore tells them, because uptime monitors can't see a job that never ran.
 
-I built Pulsewatch for exactly this: your job pings a URL when it finishes; if the ping doesn't arrive on schedule, you get an email/Slack alert. One line to set up, free for 5 monitors.
+I built Pulsewatch for exactly this: your job pings a URL when it finishes; if the ping doesn't arrive on schedule, you get an email/Slack alert. One line to set up, free for 1 monitor.
 
 Worth a 2-minute look for your backup cron? Happy to send the link — or if it's not relevant, no worries at all.
 

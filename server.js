@@ -77,12 +77,21 @@ function applyPaddleEvent(evt) {
 }
 
 // ---------- helpers ----------
+function baseHeaders() {
+  const h = {
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'SAMEORIGIN',
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+  };
+  if (process.env.NODE_ENV === 'production') h['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains';
+  return h;
+}
 const send = (res, code, body, headers = {}) => {
-  res.writeHead(code, { 'Content-Type': 'text/html; charset=utf-8', ...headers });
+  res.writeHead(code, { 'Content-Type': 'text/html; charset=utf-8', ...baseHeaders(), ...headers });
   res.end(body);
 };
 const redirect = (res, loc, cookie) => {
-  const h = { Location: loc }; if (cookie) h['Set-Cookie'] = cookie;
+  const h = { Location: loc, ...baseHeaders() }; if (cookie) h['Set-Cookie'] = cookie;
   res.writeHead(302, h); res.end();
 };
 const json = (res, code, obj) => send(res, code, JSON.stringify(obj), { 'Content-Type': 'application/json' });
@@ -130,6 +139,13 @@ function sameOrigin(req) { // basic CSRF guard for state-changing app routes
   const o = req.headers.origin; if (!o) return true; // curl/no-origin allowed
   try { return new URL(o).host === req.headers.host; } catch { return false; }
 }
+const _rl = new Map();
+function rateLimit(key, max, windowMs) {
+  const now = Date.now(); const e = _rl.get(key);
+  if (!e || now > e.reset) { _rl.set(key, { n: 1, reset: now + windowMs }); return true; }
+  if (e.n >= max) return false; e.n++; return true;
+}
+const clientIp = (req) => ((req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket.remoteAddress || 'unknown');
 const validEmail = (e) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(e || ''));
 const safeNext = (n) => (typeof n === 'string' && n.startsWith('/') && !n.startsWith('//') ? n : '/app');
 
@@ -216,7 +232,11 @@ const server = http.createServer(async (req, res) => {
     if (path === '/webhooks/paddle' && method === 'POST') {
       const raw = await new Promise((resolve) => { let b = ''; req.on('data', c => { b += c; if (b.length > 1e6) req.destroy(); }); req.on('end', () => resolve(b)); });
       const sig = req.headers['paddle-signature'];
-      if (process.env.PADDLE_WEBHOOK_SECRET && !verifyPaddleSignature(raw, sig)) {
+      if (!process.env.PADDLE_WEBHOOK_SECRET) {
+        console.warn('[paddle] webhook received but PADDLE_WEBHOOK_SECRET is not set — ignoring (fail-closed, no plan change).');
+        return json(res, 200, { ok: true, ignored: 'webhook secret not configured' });
+      }
+      if (!verifyPaddleSignature(raw, sig)) {
         console.warn('[paddle] webhook signature verification FAILED');
         return json(res, 400, { ok: false, error: 'invalid signature' });
       }
@@ -274,6 +294,7 @@ const server = http.createServer(async (req, res) => {
     if (path === '/signup' && method === 'GET') return send(res, user ? 302 : 200, user ? '' : authPage({ mode: 'signup', next: url.searchParams.get('next') }), user ? { Location: '/app' } : {});
     if (path === '/login' && method === 'GET') return send(res, user ? 302 : 200, user ? '' : authPage({ mode: 'login', next: url.searchParams.get('next') }), user ? { Location: '/app' } : {});
     if (path === '/signup' && method === 'POST') {
+      if (!rateLimit('auth:' + clientIp(req), 15, 600000)) return send(res, 429, authPage({ mode: 'signup', error: 'Too many attempts. Please wait a few minutes and try again.' }));
       const b = await readBody(req);
       if (!validEmail(b.email)) return send(res, 400, authPage({ mode: 'signup', error: 'Enter a valid email.', email: b.email }));
       if (!b.password || b.password.length < 8) return send(res, 400, authPage({ mode: 'signup', error: 'Password must be at least 8 characters.', email: b.email }));
@@ -282,6 +303,7 @@ const server = http.createServer(async (req, res) => {
       return redirect(res, safeNext(b.next), sessionCookie(sign(u.id), 7 * 86400));
     }
     if (path === '/login' && method === 'POST') {
+      if (!rateLimit('auth:' + clientIp(req), 15, 600000)) return send(res, 429, authPage({ mode: 'login', error: 'Too many attempts. Please wait a few minutes and try again.' }));
       const b = await readBody(req);
       const u = db.getUserByEmail(b.email || '');
       if (!u || !db.verifyPassword(b.password || '', u.pw_salt, u.pw_hash))

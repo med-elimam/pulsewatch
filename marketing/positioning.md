@@ -31,4 +31,4 @@ Cron/heartbeat monitoring ("dead man's switch"). Peers: Healthchecks.io, Cronito
 "Pulsewatch": jobs have a *pulse* (the heartbeat ping); we *watch* it. Sounds like infrastructure, not a toy. Suggested domains to grab: pulsewatch.io / getpulsewatch.com / pulsewatch.dev.
 
 ## Pricing rationale
-Free tier is the acquisition engine (5 real monitors, email+Slack) — generous enough to protect a real side project forever, which builds trust and word of mouth. Pro at $5/mo undercuts Cronitor ($49+) and matches DMS's entry, targeting the indie/solo wallet. Team at $19 adds seats. Deliberately cheap: this category sells on trust and volume, not margin per seat.
+Free tier (1 monitor, email+Slack) lets someone protect their single most critical job forever — enough to build trust and pull them in. Starter $5/month (25 monitors) and Pro $12/month (100) undercut Cronitor ($49+) and target the indie/solo wallet; Team $29/month (500) serves agencies. Deliberately cheap: this category sells on trust and volume, not margin per seat.

@@ -14,12 +14,12 @@ It's a single Node process using the built-in SQLite module — no external DB, 
 ## r/webdev / r/devops  (use showcase/"Showoff Saturday" threads where required)
 **Title:** Cron jobs fail silently and you find out too late — so I built a tiny monitor for it
 **Body:** (shorter, problem-first)
-Backups, scrapers, report jobs, bots — they break without erroring at anyone. Pulsewatch is a heartbeat monitor: the job pings a URL, silence = alert (email + Slack), next ping = recovery. One curl line to set up, no agent/SDK, free for 5 monitors, and self-hostable if you prefer. Would love feedback on the onboarding. Link in comments.
+Backups, scrapers, report jobs, bots — they break without erroring at anyone. Pulsewatch is a heartbeat monitor: the job pings a URL, silence = alert (email + Slack), next ping = recovery. One curl line to set up, no agent/SDK, free for 1 monitor, and self-hostable if you prefer. Would love feedback on the onboarding. Link in comments.
 
 ## r/SaaS / r/indiehackers  (building-in-public angle is welcome)
 **Title:** Launched a $5/mo cron-monitoring tool — validated it from 1M+ dev complaints first
 **Body:**
-Found the pain repeatedly across dev communities: scheduled jobs failing silently with no alert. Built the smallest thing that solves it — create a monitor, add one curl line to your job, get pinged when it stops checking in. Free tier is real (5 monitors). Sharing the build + early lessons; happy to talk pricing and positioning vs Healthchecks/Cronitor.
+Found the pain repeatedly across dev communities: scheduled jobs failing silently with no alert. Built the smallest thing that solves it — create a monitor, add one curl line to your job, get pinged when it stops checking in. Free tier is real (1 monitor). Sharing the build + early lessons; happy to talk pricing and positioning vs Healthchecks/Cronitor.
 
 ## r/cronjobs, r/homelab, r/sysadmin  (homelab/ops crowd runs tons of unmonitored cron)
 Angle: "How do you know your homelab backups actually ran last night?" Problem-first, mention the tool as how you solved it, link in comments.

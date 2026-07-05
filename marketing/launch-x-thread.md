@@ -30,7 +30,7 @@ Works with cron, systemd timers, GitHub Actions, k8s CronJobs, Lambda, Windows T
 
 Want more? /start + /fail signals give you run duration and explicit failure alerts.
 
-6/ Boring tech on purpose: a single Node process, embedded SQLite, zero dependencies. Self-host it or use the hosted version. Free for 5 monitors.
+6/ Boring tech on purpose: a single Node process, embedded SQLite, zero dependencies. Self-host it or use the hosted version. Free for 1 monitor.
 
 7/ If you run anything on a schedule, ask yourself: how would you know if it stopped last night?
 

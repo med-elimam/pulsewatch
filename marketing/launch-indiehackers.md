@@ -9,7 +9,7 @@
 
 **The stack (boring on purpose).** One Node process, built-in `node:sqlite`, zero npm dependencies, server-rendered HTML. Self-hostable (`node server.js`) or hosted. This keeps it cheap to run and trivially deployable.
 
-**Pricing.** Free = 5 monitors (genuinely useful forever). Pro = $5/mo, 50 monitors. Team = $19/mo, unlimited + seats. Priced under Cronitor deliberately — this category sells on trust and volume.
+**Pricing.** Free = 1 monitor. Starter = $5/month (25 monitors). Pro = $12/month (100). Team = $29/month (500). Priced under Cronitor deliberately — this category sells on trust and volume.
 
 **GTM plan.** Show HN, r/selfhosted + r/devops (rules-respecting, problem-first), a build-in-public thread on X, and direct outreach to indie devs who've publicly complained about a silent cron failure.
 

@@ -106,7 +106,7 @@ export function landing({ user }) {
     <a class="btn" href="/signup">Start monitoring free →</a>
     <a class="btn ghost" href="/#how">See how it works</a>
   </div>
-  <p class="small muted" style="margin-top:16px">No credit card · 3 monitors free · Setup in one line</p>
+  <p class="small muted" style="margin-top:16px">No credit card · 1 free monitor · Setup in one line</p>
   <div style="max-width:620px;margin:34px auto 0">
     <div class="code"><button class="btn ghost sm copy" data-copy="${esc(ping)}" onclick="copyText(this)">Copy</button><span class="mono">${esc(ping)}</span></div>
     <p class="small muted" style="margin-top:10px">Add that one line to the end of any job. Silence = we alert you.</p>
@@ -300,7 +300,7 @@ export function authPage({ mode, error, email, next }) {
   const body = `
   <div class="form">
     <h1 style="text-align:center;font-size:28px">${isLogin ? 'Log in' : 'Create your account'}</h1>
-    <p class="center muted small">${isLogin ? 'Welcome back.' : 'Free forever for up to 3 monitors. No card needed.'}</p>
+    <p class="center muted small">${isLogin ? 'Welcome back.' : 'Free forever for 1 monitor. No card needed.'}</p>
     ${error ? `<div class="err">${esc(error)}</div>` : ''}
     <form method="post" action="/${isLogin ? 'login' : 'signup'}">
       ${next ? `<input type="hidden" name="next" value="${esc(next)}">` : ''}
