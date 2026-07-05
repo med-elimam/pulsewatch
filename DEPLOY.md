@@ -86,3 +86,33 @@ The alert templates are already spam-conscious: plain transactional subjects (`[
 5. After DNS verifies, send the **test alert** again and, in Gmail, use "Report not spam" once — reputation builds quickly for low-volume transactional mail.
 
 These are DNS/provider steps only; no code change is needed.
+
+---
+
+## Paddle domain review readiness
+Public pricing must be clearly visible (no login) and identical to the Paddle product prices.
+
+Plans (must match Paddle exactly):
+
+| Plan | Price | Monitors |
+|------|-------|----------|
+| Free | $0/month | 3 |
+| Starter | $5/month | 25 |
+| Pro | $12/month | 100 |
+| Team | $29/month | 500 |
+
+Checklist before resubmitting to Paddle:
+- [ ] Public pricing page exists at `/pricing` and is visible without login.
+- [ ] Landing page shows a pricing section that links to `/pricing`.
+- [ ] Prices on landing, `/pricing`, `/billing`, and checkout buttons all match the Paddle product prices above.
+- [ ] Tax note visible under pricing: "Taxes may apply and will be calculated at checkout."
+- [ ] Billing frequency shown everywhere as "$X/month" (never a bare "$X").
+- [ ] No hidden checkout-only prices; no "free trial", "intro price", "limited offer", or "discount" wording (none are configured in Paddle).
+- [ ] `/terms`, `/privacy`, `/refund`, `/contact` pages exist and are linked in the footer on every public page.
+- [ ] Contact page shows a working support email.
+- [ ] `APP_URL=https://pulsewatch.maurisis.com` in production env.
+- [ ] Paddle env set: `PADDLE_ENV`, `PADDLE_CLIENT_TOKEN`, `PADDLE_STARTER_PRICE_ID`, `PADDLE_PRO_PRICE_ID`, `PADDLE_TEAM_PRICE_ID` (and `PADDLE_API_KEY`, `PADDLE_WEBHOOK_SECRET` for webhooks).
+- [ ] Paddle webhook URL configured in the Paddle dashboard (point it at your deployment; handler for subscription events is a follow-up task).
+- [ ] Payments processed by Paddle as merchant of record (stated on `/pricing`, `/refund`, `/contact`).
+
+Note: this build does not include Stripe. Payments are handled exclusively by Paddle.

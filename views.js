@@ -1,3 +1,4 @@
+import { PLANS, priceLabel, TAX_NOTE, PLAN_BY_ID, PLAN_LIMIT, planName } from './plans.js';
 // views.js — server-rendered HTML (no build step, no template engine)
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export { esc };
@@ -26,8 +27,8 @@ a{color:var(--brand);text-decoration:none}a:hover{text-decoration:underline}
 .mono{font-family:'SF Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 .code{position:relative;background:#0a0e16;border:1px solid var(--border);border-radius:10px;padding:14px 16px;font-family:'SF Mono',ui-monospace,monospace;font-size:13.5px;color:#cdd6f4;overflow-x:auto;text-align:left}
 .code .copy{position:absolute;top:8px;right:8px}
-.grid{display:grid;gap:18px}.g3{grid-template-columns:repeat(3,1fr)}.g2{grid-template-columns:repeat(2,1fr)}
-@media(max-width:800px){.g3,.g2{grid-template-columns:1fr}.hero h1{font-size:34px}}
+.grid{display:grid;gap:18px}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}.g2{grid-template-columns:repeat(2,1fr)}
+@media(max-width:800px){.g3,.g2{grid-template-columns:1fr}.hero h1{font-size:34px}}@media(max-width:900px){.g4{grid-template-columns:repeat(2,1fr)}}@media(max-width:560px){.g4{grid-template-columns:1fr}}
 .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:22px}
 .section{padding:56px 0;border-top:1px solid var(--border)}
 .section h2{font-size:28px;margin:0 0 8px;letter-spacing:-.5px}.section .lead{color:var(--muted);margin:0 0 28px}
@@ -71,8 +72,26 @@ export function layout({ title, user, body, wide }) {
 <style>${CSS}</style></head><body>
 <div class="wrap"><nav class="nav"><a class="brand" href="/"><span class="dot"></span> Pulsewatch</a>${nav}</nav></div>
 <div class="wrap" style="max-width:${wide ? 1040 : 1040}px">${body}</div>
-<div class="wrap"><div class="footer"><div>© ${new Date().getFullYear()} Pulsewatch — a dead man's switch for scheduled jobs.</div><div><a href="/docs">Docs</a> · <a href="/pricing">Pricing</a> · <a href="/terms">Terms</a> · <a href="/privacy">Privacy</a> · <a href="/refunds">Refunds</a></div></div></div>
+<div class="wrap"><div class="footer"><div>© ${new Date().getFullYear()} Pulsewatch — a dead man's switch for scheduled jobs.</div><div><a href="/pricing">Pricing</a> · <a href="/docs">Docs</a> · <a href="/terms">Terms</a> · <a href="/privacy">Privacy</a> · <a href="/refund">Refund Policy</a> · <a href="/contact">Contact</a></div></div></div>
 <script>${COPY_JS}</script></body></html>`;
+}
+
+
+function landingPricingSection() {
+  const cols = PLANS.map(p => `
+    <div class="card" style="${p.highlight ? 'border-color:var(--brand)' : ''}">
+      <h3 style="margin:0 0 2px">${p.name}</h3>
+      <div class="price" style="margin:4px 0 8px"><span class="amt" style="font-size:28px">$${p.price}</span><span class="per">/month</span></div>
+      <p class="muted small" style="margin:0 0 8px">${esc(p.monitors + ' monitors')}</p>
+      <p class="muted small" style="margin:0">${esc(p.blurb)}</p>
+    </div>`).join('');
+  return `<section class="section" id="pricing">
+    <h2>Pricing</h2>
+    <p class="lead">Public monthly pricing. Free forever for personal jobs &mdash; upgrade as you add more monitors.</p>
+    <div class="grid g4">${cols}</div>
+    <p class="center muted small" style="margin-top:16px">${TAX_NOTE}</p>
+    <div class="center" style="margin-top:14px"><a class="btn" href="/pricing">See full pricing &amp; checkout &rarr;</a></div>
+  </section>`;
 }
 
 export function landing({ user }) {
@@ -82,11 +101,12 @@ export function landing({ user }) {
   <span class="kicker">● Know within seconds, not days</span>
   <h1>Your cron jobs fail silently.<br>We make them speak up.</h1>
   <p class="sub">Backups, scrapers, billing scripts, and nightly reports break without a sound — and you find out when a customer does. Pulsewatch pings you the moment a scheduled job misses its check-in.</p>
+  <p class="small muted" style="max-width:640px;margin:0 auto 6px">Pulsewatch monitors cron jobs and scheduled tasks. Add one ping URL to your job, and Pulsewatch alerts you by email or Slack if it stops checking in.</p>
   <div class="cta">
     <a class="btn" href="/signup">Start monitoring free →</a>
     <a class="btn ghost" href="/#how">See how it works</a>
   </div>
-  <p class="small muted" style="margin-top:16px">No credit card · 5 monitors free · Setup in one line</p>
+  <p class="small muted" style="margin-top:16px">No credit card · 3 monitors free · Setup in one line</p>
   <div style="max-width:620px;margin:34px auto 0">
     <div class="code"><button class="btn ghost sm copy" data-copy="${esc(ping)}" onclick="copyText(this)">Copy</button><span class="mono">${esc(ping)}</span></div>
     <p class="small muted" style="margin-top:10px">Add that one line to the end of any job. Silence = we alert you.</p>
@@ -141,6 +161,8 @@ export function landing({ user }) {
   <a class="btn" href="/signup">Create your first monitor →</a>
 </section>
 
+${landingPricingSection()}
+
 <section class="section" id="faq">
   <h2>FAQ</h2>
   <div class="grid g2">
@@ -155,29 +177,46 @@ export function landing({ user }) {
   return layout({ title: 'Pulsewatch — Know the second a cron job stops running', user, body });
 }
 
-export function pricing({ user }) {
-  const tier = (name, price, per, feats, cta, hi) => `
-  <div class="card" style="${hi ? 'border-color:var(--brand);box-shadow:0 0 0 1px var(--brand)' : ''}">
-    ${hi ? '<span class="pill" style="color:var(--brand);border-color:var(--brand)">Most popular</span>' : '<span class="pill">&nbsp;</span>'}
-    <h3 style="margin:12px 0 0">${name}</h3>
-    <div class="price"><span class="amt">$${price}</span><span class="per">/${per}</span></div>
-    <div>${feats.map(f => `<div style="margin:9px 0"><span class="check">✓</span>${f}</div>`).join('')}</div>
-    ${cta}
-  </div>`;
+
+const PADDLE_NOT_READY = 'Paddle checkout is being activated. Contact support to upgrade.';
+export function paddleScript(paddle) {
+  if (paddle && paddle.configured) {
+    return `<script src="https://cdn.paddle.com/paddle/v2/paddle.js"><\/script>
+<script>try{Paddle.Environment.set(${JSON.stringify(paddle.env || 'production')});Paddle.Initialize({token:${JSON.stringify(paddle.clientToken || '')}});}catch(e){console.error('Paddle init',e);}
+function paddleBuy(pid){if(!pid){alert(${JSON.stringify(PADDLE_NOT_READY)});window.location='/contact';return;}try{Paddle.Checkout.open({items:[{priceId:pid,quantity:1}]});}catch(e){window.location='/contact';}}<\/script>`;
+  }
+  return `<script>function paddleBuy(pid){alert(${JSON.stringify(PADDLE_NOT_READY)});window.location='/contact';}<\/script>`;
+}
+export function checkoutButton(plan, paddle, cls) {
+  cls = cls || 'btn';
+  if (plan.id === 'free') return `<a class="${cls} ghost" style="width:100%;text-align:center;margin-top:16px;box-sizing:border-box" href="/signup">${plan.cta}</a>`;
+  const pid = (paddle && paddle.priceIds && paddle.priceIds[plan.id]) || '';
+  return `<button class="${cls}" style="width:100%;margin-top:16px" onclick="paddleBuy('${pid}')">${plan.cta}</button>`;
+}
+
+export function pricing({ user, paddle }) {
+  const cols = PLANS.map(p => `
+    <div class="card" style="${p.highlight ? 'border-color:var(--brand);box-shadow:0 0 0 1px var(--brand)' : ''}">
+      ${p.highlight ? '<span class="pill" style="color:var(--brand);border-color:var(--brand)">Most popular</span>' : '<span class="pill">&nbsp;</span>'}
+      <h3 style="margin:12px 0 0">${p.name}</h3>
+      <div class="price"><span class="amt">$${p.price}</span><span class="per">/month</span></div>
+      <p class="muted small" style="margin:0 0 12px;min-height:34px">${esc(p.blurb)}</p>
+      <div>${p.features.map(f => `<div style="margin:9px 0"><span class="check">&#10003;</span>${esc(f)}</div>`).join('')}</div>
+      ${checkoutButton(p, paddle)}
+    </div>`).join('');
   const body = `
-  <section class="hero" style="padding:64px 0 24px">
-    <h1 style="font-size:38px">Simple pricing. Start free.</h1>
-    <p class="sub">Monitor real jobs today at no cost. Upgrade when you outgrow it.</p>
+  <section class="hero" style="padding:60px 0 16px">
+    <h1 style="font-size:38px">Simple, transparent pricing</h1>
+    <p class="sub">Public monthly pricing. The price shown here is the price you pay at checkout &mdash; no hidden fees.</p>
   </section>
-  <section style="padding-bottom:40px">
-    <div class="grid g3">
-      ${tier('Free', '0', 'forever', ['Up to 5 monitors', 'Email + Slack alerts', 'Failure & recovery alerts', '30-day event history', 'Unlimited pings'], `<a class="btn ghost" style="width:100%;text-align:center;margin-top:16px" href="/signup">Get started</a>`)}
-      ${tier('Pro', '5', 'mo', ['Up to 50 monitors', 'Everything in Free', 'Down-to-1-minute checks', '1-year history', 'Priority support'], `<form method="post" action="/app/upgrade"><input type="hidden" name="plan" value="pro"><button class="btn" style="width:100%;margin-top:16px">Upgrade to Pro</button></form>`, true)}
-      ${tier('Team', '19', 'mo', ['Unlimited monitors', 'Everything in Pro', 'Multiple team members', 'SMS/webhook alerts', 'SSO on request'], `<form method="post" action="/app/upgrade"><input type="hidden" name="plan" value="team"><button class="btn ghost" style="width:100%;margin-top:16px">Choose Team</button></form>`)}
-    </div>
-    <p class="center muted small" style="margin-top:22px">Billing isn't wired up in this instance yet — clicking upgrade registers your interest and we'll reach out. The Free plan is fully functional right now.</p>
-  </section>`;
-  return layout({ title: 'Pricing — Pulsewatch', user, body });
+  <section style="padding-bottom:12px">
+    <div class="grid g4">${cols}</div>
+    <p class="center muted small" style="margin-top:20px">${TAX_NOTE}</p>
+    ${(!paddle || !paddle.configured) ? `<p class="center small" style="color:var(--amber);margin-top:6px">Paddle checkout is being activated. Contact <a href="/contact">support</a> to upgrade.</p>` : ''}
+    <p class="center muted small" style="margin-top:10px">Billed monthly. Cancel anytime. Payments are processed by <strong>Paddle</strong>, our merchant of record. See our <a href="/refund">Refund Policy</a>.</p>
+  </section>
+  ${paddleScript(paddle)}`;
+  return layout({ title: 'Pricing &mdash; Pulsewatch', user, body });
 }
 
 export function docs({ user, appUrl }) {
@@ -231,7 +270,7 @@ export function authPage({ mode, error, email }) {
   const body = `
   <div class="form">
     <h1 style="text-align:center;font-size:28px">${isLogin ? 'Log in' : 'Create your account'}</h1>
-    <p class="center muted small">${isLogin ? 'Welcome back.' : 'Free forever for up to 5 monitors. No card needed.'}</p>
+    <p class="center muted small">${isLogin ? 'Welcome back.' : 'Free forever for up to 3 monitors. No card needed.'}</p>
     ${error ? `<div class="err">${esc(error)}</div>` : ''}
     <form method="post" action="/${isLogin ? 'login' : 'signup'}">
       <label>Email</label>
@@ -271,7 +310,7 @@ export function legalPage({ kind, user, company, email, effective }) {
     <h3>5. Limitation of liability</h3>
     <p class="muted">To the maximum extent permitted by law, ${C} and its operators shall not be liable for any indirect, incidental, special, consequential, or exemplary damages, or for any loss of data, revenue, or profits, arising from your use of or inability to use the Service. Our total aggregate liability for any claim shall not exceed the amount you paid us in the twelve months preceding the claim (or, if you use a free plan, USD $50).</p>
     <h3>6. Paid plans</h3>
-    <p class="muted">Paid subscriptions, where offered, are billed in advance on a recurring basis. You can cancel at any time; cancellation stops future renewals. Refunds are governed by our <a href="/refunds">Refund Policy</a>.</p>
+    <p class="muted">Paid subscriptions, where offered, are billed in advance on a recurring basis. You can cancel at any time; cancellation stops future renewals. Refunds are governed by our <a href="/refund">Refund Policy</a>.</p>
     <h3>7. Termination</h3>
     <p class="muted">You may stop using the Service and delete your account at any time. We may suspend or terminate access if you breach these Terms or to comply with law. Sections that by their nature should survive termination will survive.</p>
     <h3>8. Changes</h3>
@@ -298,20 +337,27 @@ export function legalPage({ kind, user, company, email, effective }) {
     <h3>8. Changes &amp; contact</h3>
     <p class="muted">We may update this policy; the "Last updated" date will change accordingly. Questions or requests: <a href="mailto:${E}">${E}</a>.</p>`);
 
-  if (kind === 'refunds') return wrap('Refund Policy', `
-    <p class="muted">We want you to be satisfied with ${C}. This policy explains when refunds are available for paid subscriptions.</p>
-    <h3>1. Free plan</h3>
-    <p class="muted">${C} offers a free plan so you can evaluate the Service before paying. We encourage you to use it to confirm the Service meets your needs.</p>
-    <h3>2. 14-day money-back guarantee</h3>
-    <p class="muted">If you are not satisfied with a paid plan, you may request a full refund within 14 days of your initial purchase. Contact <a href="mailto:${E}">${E}</a> from your account email and we will process it.</p>
-    <h3>3. Renewals</h3>
-    <p class="muted">Subscriptions renew automatically. You can cancel at any time from your account or by contacting us; cancellation takes effect at the end of the current billing period and stops future charges. For an unintended renewal, contact us within 7 days of the charge and we will consider a refund of that renewal.</p>
-    <h3>4. How refunds are issued</h3>
-    <p class="muted">Approved refunds are returned to your original payment method. It may take several business days for the credit to appear, depending on your bank or card issuer.</p>
-    <h3>5. Exceptions</h3>
-    <p class="muted">Refunds may be declined in cases of clear abuse of this policy or violation of our <a href="/terms">Terms of Service</a>.</p>
-    <h3>6. Contact</h3>
-    <p class="muted">To request a refund or ask a question: <a href="mailto:${E}">${E}</a>.</p>`);
+  if (kind === 'refund') return wrap('Refund Policy', `
+    <p class="muted">${C} sells monthly subscriptions. Payments are processed by <strong>Paddle</strong>, our merchant of record. Paddle may handle billing, tax, invoices, and buyer support on our behalf.</p>
+    <h3>1. Refund window</h3>
+    <p class="muted">Refund requests can be sent to support within <strong>14 days</strong> of purchase. Contact <a href="mailto:${E}">${E}</a> from your account email and we will process eligible requests.</p>
+    <h3>2. Merchant of record</h3>
+    <p class="muted">Because Paddle is the merchant of record, your payment, invoice, applicable taxes, and card statement entry are managed by Paddle. Refunds are issued back to your original payment method through Paddle.</p>
+    <h3>3. Subscriptions &amp; cancellation</h3>
+    <p class="muted">Subscriptions are billed monthly and renew automatically until cancelled. You can cancel at any time; cancellation stops future renewals and takes effect at the end of the current billing period.</p>
+    <h3>4. How to request</h3>
+    <p class="muted">Email <a href="mailto:${E}">${E}</a> with your account email and the reason for the request. We aim to respond within a few business days.</p>
+    <p class="muted small">Taxes may apply and are calculated at checkout by Paddle.</p>`);
+
+  if (kind === 'contact') return wrap('Contact', `
+    <p class="muted">We are happy to help with questions about ${C}, your account, billing, or a refund request.</p>
+    <h3>Support email</h3>
+    <p style="font-size:18px"><a href="mailto:${E}">${E}</a></p>
+    <p class="muted">Please email from the address associated with your account so we can find it quickly. We aim to respond within a few business days.</p>
+    <h3>Billing &amp; payments</h3>
+    <p class="muted">Payments are processed by <strong>Paddle</strong>, our merchant of record. Paddle may handle billing, tax, invoices, and buyer support. For payment or invoice questions you can contact us and we will assist or direct you to Paddle.</p>
+    <h3>Refunds</h3>
+    <p class="muted">See our <a href="/refund">Refund Policy</a>. Refund requests can be sent to the support email above within 14 days of purchase.</p>`);
 
   return wrap('Not found', '<p class="muted">Unknown page.</p>');
 }

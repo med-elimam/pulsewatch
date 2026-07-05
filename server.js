@@ -4,7 +4,8 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 import * as db from './db.js';
 import * as A from './alerts.js';
 import { landing, pricing, docs, authPage, legalPage } from './views.js';
-import { dashboard, newMonitor, monitorDetail } from './views-app.js';
+import { dashboard, newMonitor, monitorDetail, billingPage } from './views-app.js';
+import { PLAN_LIMIT, planName } from './plans.js';
 
 const PORT = Number(process.env.PORT || 3000);
 const SECRET = process.env.SECRET || 'dev-insecure-secret-change-me';
@@ -12,7 +13,19 @@ if (SECRET === 'dev-insecure-secret-change-me' && process.env.NODE_ENV === 'prod
   console.warn('[warn] SECRET is not set — set a strong SECRET env var in production.');
 const FREE_LIMIT = 5;
 const COMPANY_NAME = process.env.COMPANY_NAME || 'Pulsewatch';
-const LEGAL_EMAIL = process.env.LEGAL_EMAIL || 'support@pulsewatch.io';
+const LEGAL_EMAIL = process.env.LEGAL_EMAIL || 'support@maurisis.com';
+function paddleConfig() {
+  return {
+    configured: !!process.env.PADDLE_CLIENT_TOKEN,
+    env: process.env.PADDLE_ENV || 'production',
+    clientToken: process.env.PADDLE_CLIENT_TOKEN || '',
+    priceIds: {
+      starter: process.env.PADDLE_STARTER_PRICE_ID || '',
+      pro: process.env.PADDLE_PRO_PRICE_ID || '',
+      team: process.env.PADDLE_TEAM_PRICE_ID || '',
+    },
+  };
+}
 
 // ---------- helpers ----------
 const send = (res, code, body, headers = {}) => {
@@ -153,11 +166,16 @@ const server = http.createServer(async (req, res) => {
 
     // public pages
     if (path === '/' && method === 'GET') return send(res, 200, landing({ user }));
-    if (path === '/pricing' && method === 'GET') return send(res, 200, pricing({ user }));
+    if (path === '/pricing' && method === 'GET') return send(res, 200, pricing({ user, paddle: paddleConfig() }));
     if (path === '/docs' && method === 'GET') return send(res, 200, docs({ user, appUrl: app }));
-    if (method === 'GET' && (path === '/terms' || path === '/privacy' || path === '/refunds')) {
-      const kind = path === '/terms' ? 'terms' : path === '/privacy' ? 'privacy' : 'refunds';
+    if (method === 'GET' && ['/terms', '/privacy', '/refund', '/contact'].includes(path)) {
+      const kind = path.slice(1); // terms | privacy | refund | contact
       return send(res, 200, legalPage({ kind, user, company: COMPANY_NAME, email: LEGAL_EMAIL }));
+    }
+    if (method === 'GET' && path === '/refunds') return redirect(res, '/refund'); // legacy alias
+    if (path === '/billing') {
+      if (!user) return redirect(res, '/login');
+      return send(res, 200, billingPage({ user, count: db.countMonitors(user.id), paddle: paddleConfig() }));
     }
 
     // auth
@@ -192,7 +210,8 @@ const server = http.createServer(async (req, res) => {
       if (path === '/app/new' && method === 'GET') return send(res, 200, newMonitor({ user }));
       if (path === '/app/new' && method === 'POST') {
         const b = await readBody(req);
-        if (db.countMonitors(user.id) >= FREE_LIMIT) return send(res, 200, newMonitor({ user, error: `Free plan is limited to ${FREE_LIMIT} monitors. Upgrade for more.`, values: b }));
+        const _limit = PLAN_LIMIT[user.plan || 'free'] || PLAN_LIMIT.free;
+        if (db.countMonitors(user.id) >= _limit) return send(res, 200, newMonitor({ user, error: `Your ${planName(user.plan || 'free')} plan allows ${_limit} monitors. Upgrade on the Billing page to add more.`, values: b }));
         if (!b.name || !b.name.trim()) return send(res, 400, newMonitor({ user, error: 'Give your monitor a name.', values: b }));
         if (b.alert_email && !validEmail(b.alert_email)) return send(res, 400, newMonitor({ user, error: 'Alert email is not valid.', values: b }));
         const m = db.createMonitor(user.id, {

@@ -1,5 +1,6 @@
 // views-app.js — authenticated app pages
-import { layout, esc } from './views.js';
+import { layout, esc, checkoutButton, paddleScript } from './views.js';
+import { PLANS, PLAN_LIMIT, PLAN_BY_ID, priceLabel, planName, TAX_NOTE } from './plans.js';
 
 export function statusBadge(s) {
   const label = s === 'up' ? 'up' : s === 'down' ? 'down' : s === 'paused' ? 'paused' : 'waiting';
@@ -24,7 +25,8 @@ const evLabel = { created:'Created', start:'Started', success:'Checked in', fail
 const evColor = { down:'var(--red)', up:'var(--green)', fail:'var(--red)', success:'var(--green)', test:'var(--brand)' };
 
 export function dashboard({ user, monitors, appUrl, flash }) {
-  const limit = 5;
+  const plan = user.plan || 'free';
+  const limit = PLAN_LIMIT[plan] || PLAN_LIMIT.free;
   const atLimit = monitors.length >= limit;
   let body;
   if (monitors.length === 0) {
@@ -50,8 +52,8 @@ export function dashboard({ user, monitors, appUrl, flash }) {
       </tr>`).join('');
     body = `
     <section style="display:flex;justify-content:space-between;align-items:center;padding:40px 0 18px">
-      <div><h1 style="font-size:28px;margin:0">Your monitors</h1><p class="muted small" style="margin:4px 0 0">${monitors.length} of ${limit} on the Free plan</p></div>
-      ${atLimit ? `<a class="btn" href="/pricing">Upgrade for more</a>` : `<a class="btn" href="/app/new">+ New monitor</a>`}
+      <div><h1 style="font-size:28px;margin:0">Your monitors</h1><p class="muted small" style="margin:4px 0 0">${monitors.length} of ${limit} monitors on the ${planName(plan)} plan &middot; <a href="/billing">Billing</a></p></div>
+      ${atLimit ? `<a class="btn" href="/billing">Upgrade for more</a>` : `<a class="btn" href="/app/new">+ New monitor</a>`}
     </section>
     ${flash ? `<div class="ok">${esc(flash)}</div>` : ''}
     <div class="card" style="padding:6px 16px"><table>
@@ -172,4 +174,49 @@ export function monitorDetail({ user, m, events, appUrl, flash, error }) {
   </div>
   <meta http-equiv="refresh" content="30">`;
   return layout({ title: `${m.name} — Pulsewatch`, user, body });
+}
+
+export function billingPage({ user, count, paddle }) {
+  const plan = user.plan || 'free';
+  const cur = PLAN_BY_ID[plan] || PLAN_BY_ID.free;
+  const limit = PLAN_LIMIT[plan] || PLAN_LIMIT.free;
+  const pct = Math.min(100, Math.round((count / limit) * 100));
+  const status = plan === 'free'
+    ? 'You are on the Free plan. No payment method is required.'
+    : 'Your subscription is managed by Paddle, our merchant of record.';
+  const planCards = PLANS.map(p => {
+    const isCurrent = p.id === plan;
+    return `<div class="card" style="${p.highlight ? 'border-color:var(--brand)' : ''}">
+      <h3 style="margin:0 0 2px">${p.name}${isCurrent ? ' <span class="pill" style="color:var(--green);border-color:var(--green)">Current</span>' : ''}</h3>
+      <div class="price" style="margin:4px 0 6px"><span class="amt" style="font-size:26px">$${p.price}</span><span class="per">/month</span></div>
+      <p class="muted small" style="margin:0 0 8px">${esc(p.monitors + ' monitors')}</p>
+      ${isCurrent ? '<div class="btn ghost sm" style="width:100%;text-align:center;opacity:.7;cursor:default">Current plan</div>' : (p.id === 'free' ? '<div class="muted small">Downgrade by cancelling in Paddle.</div>' : checkoutButton(p, paddle, 'btn sm'))}
+    </div>`;
+  }).join('');
+  const body = `
+  <section style="padding:38px 0 10px"><a class="muted small" href="/app">&larr; Dashboard</a>
+    <h1 style="font-size:28px;margin:8px 0 0">Billing</h1></section>
+  <div class="grid g2" style="align-items:start">
+    <div class="card">
+      <h3 style="margin-top:0">Current plan</h3>
+      <div style="font-size:22px;font-weight:700">${cur.name} <span class="muted" style="font-size:15px;font-weight:400">&mdash; $${cur.price}/month</span></div>
+      <p class="muted small" style="margin:6px 0 0">${esc(cur.blurb)}</p>
+      <p class="small" style="margin:14px 0 0"><strong>Billing status:</strong> ${status}</p>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">Monitor usage</h3>
+      <div style="font-size:22px;font-weight:700">${count} <span class="muted" style="font-size:15px;font-weight:400">of ${limit} monitors</span></div>
+      <div style="height:8px;background:var(--panel2);border-radius:999px;margin:12px 0;overflow:hidden"><div style="width:${pct}%;height:100%;background:${pct >= 100 ? 'var(--red)' : 'var(--brand)'}"></div></div>
+      <p class="muted small" style="margin:0">${count >= limit ? 'You have reached your plan limit. Upgrade to add more monitors.' : `You can add ${limit - count} more monitor(s) on the ${cur.name} plan.`}</p>
+    </div>
+  </div>
+  <div class="card" style="margin-top:18px">
+    <h3 style="margin-top:0">Plans</h3>
+    <div class="grid g4">${planCards}</div>
+    <p class="muted small" style="margin-top:16px">${TAX_NOTE}</p>
+    ${(!paddle || !paddle.configured) ? `<p class="small" style="color:var(--amber);margin-top:4px">Paddle checkout is being activated. Contact <a href="/contact">support</a> to upgrade.</p>` : ''}
+    <p class="muted small" style="margin-top:8px">Payments are processed by <strong>Paddle</strong>, our merchant of record. See our <a href="/refund">Refund Policy</a>.</p>
+  </div>
+  ${paddleScript(paddle)}`;
+  return layout({ title: 'Billing — Pulsewatch', user, body });
 }
