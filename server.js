@@ -3,7 +3,7 @@ import http from 'node:http';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import * as db from './db.js';
 import * as A from './alerts.js';
-import { landing, pricing, docs, authPage } from './views.js';
+import { landing, pricing, docs, authPage, legalPage } from './views.js';
 import { dashboard, newMonitor, monitorDetail } from './views-app.js';
 
 const PORT = Number(process.env.PORT || 3000);
@@ -11,6 +11,8 @@ const SECRET = process.env.SECRET || 'dev-insecure-secret-change-me';
 if (SECRET === 'dev-insecure-secret-change-me' && process.env.NODE_ENV === 'production')
   console.warn('[warn] SECRET is not set — set a strong SECRET env var in production.');
 const FREE_LIMIT = 5;
+const COMPANY_NAME = process.env.COMPANY_NAME || 'Pulsewatch';
+const LEGAL_EMAIL = process.env.LEGAL_EMAIL || 'support@pulsewatch.io';
 
 // ---------- helpers ----------
 const send = (res, code, body, headers = {}) => {
@@ -153,6 +155,10 @@ const server = http.createServer(async (req, res) => {
     if (path === '/' && method === 'GET') return send(res, 200, landing({ user }));
     if (path === '/pricing' && method === 'GET') return send(res, 200, pricing({ user }));
     if (path === '/docs' && method === 'GET') return send(res, 200, docs({ user, appUrl: app }));
+    if (method === 'GET' && (path === '/terms' || path === '/privacy' || path === '/refunds')) {
+      const kind = path === '/terms' ? 'terms' : path === '/privacy' ? 'privacy' : 'refunds';
+      return send(res, 200, legalPage({ kind, user, company: COMPANY_NAME, email: LEGAL_EMAIL }));
+    }
 
     // auth
     if (path === '/signup' && method === 'GET') return send(res, user ? 302 : 200, user ? '' : authPage({ mode: 'signup' }), user ? { Location: '/app' } : {});

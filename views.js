@@ -71,7 +71,7 @@ export function layout({ title, user, body, wide }) {
 <style>${CSS}</style></head><body>
 <div class="wrap"><nav class="nav"><a class="brand" href="/"><span class="dot"></span> Pulsewatch</a>${nav}</nav></div>
 <div class="wrap" style="max-width:${wide ? 1040 : 1040}px">${body}</div>
-<div class="wrap"><div class="footer"><div>© ${new Date().getFullYear()} Pulsewatch — a dead man's switch for scheduled jobs.</div><div><a href="/docs">Docs</a> · <a href="/pricing">Pricing</a> · <a href="/#faq">FAQ</a></div></div></div>
+<div class="wrap"><div class="footer"><div>© ${new Date().getFullYear()} Pulsewatch — a dead man's switch for scheduled jobs.</div><div><a href="/docs">Docs</a> · <a href="/pricing">Pricing</a> · <a href="/terms">Terms</a> · <a href="/privacy">Privacy</a> · <a href="/refunds">Refunds</a></div></div></div>
 <script>${COPY_JS}</script></body></html>`;
 }
 
@@ -245,4 +245,73 @@ export function authPage({ mode, error, email }) {
     </p>
   </div>`;
   return layout({ title: isLogin ? 'Log in — Pulsewatch' : 'Sign up — Pulsewatch', body });
+}
+
+
+// ---- legal pages (Terms, Privacy, Refunds) ----
+export function legalPage({ kind, user, company, email, effective }) {
+  const C = company || 'Pulsewatch';
+  const E = email || 'support@pulsewatch.io';
+  const D = effective || new Date().toISOString().slice(0, 10);
+  const wrap = (title, html) => layout({ title: `${title} — ${C}`, user, body:
+    `<section style="padding:44px 0 8px"><h1 style="font-size:32px;margin:0">${title}</h1>
+     <p class="muted small">Last updated: ${D}</p></section>
+     <div class="section" style="border-top:none;padding-top:8px;max-width:760px">${html}</div>` });
+
+  if (kind === 'terms') return wrap('Terms of Service', `
+    <p class="muted">These Terms of Service ("Terms") govern your access to and use of ${C} (the "Service"), a monitoring tool that alerts you when scheduled jobs stop checking in. By creating an account or using the Service, you agree to these Terms. If you do not agree, do not use the Service.</p>
+    <h3>1. The Service</h3>
+    <p class="muted">${C} lets you create monitors, receive unique ping URLs, and get email and/or Slack notifications when an expected check-in does not arrive on time. The Service is provided on a best-effort basis and is intended as a supplementary safeguard, not a sole point of failure.</p>
+    <h3>2. Accounts</h3>
+    <p class="muted">You are responsible for the activity under your account and for keeping your credentials secure. You must provide a valid email address and be at least the age of majority in your jurisdiction. You may not use the Service to send spam, to monitor systems you are not authorized to monitor, or for any unlawful purpose.</p>
+    <h3>3. Acceptable use</h3>
+    <p class="muted">You agree not to (a) disrupt or overload the Service, (b) attempt to access other users' data, (c) reverse engineer or resell the Service except as permitted by its open-source license, or (d) use it to facilitate illegal activity. We may suspend accounts that violate these Terms.</p>
+    <h3>4. Availability &amp; no warranty</h3>
+    <p class="muted">The Service is provided "as is" and "as available" without warranties of any kind, express or implied. We do not guarantee that alerts will always be delivered, timely, or uninterrupted. You are responsible for verifying that your own jobs run correctly. To the maximum extent permitted by law, ${C} disclaims all implied warranties including merchantability and fitness for a particular purpose.</p>
+    <h3>5. Limitation of liability</h3>
+    <p class="muted">To the maximum extent permitted by law, ${C} and its operators shall not be liable for any indirect, incidental, special, consequential, or exemplary damages, or for any loss of data, revenue, or profits, arising from your use of or inability to use the Service. Our total aggregate liability for any claim shall not exceed the amount you paid us in the twelve months preceding the claim (or, if you use a free plan, USD $50).</p>
+    <h3>6. Paid plans</h3>
+    <p class="muted">Paid subscriptions, where offered, are billed in advance on a recurring basis. You can cancel at any time; cancellation stops future renewals. Refunds are governed by our <a href="/refunds">Refund Policy</a>.</p>
+    <h3>7. Termination</h3>
+    <p class="muted">You may stop using the Service and delete your account at any time. We may suspend or terminate access if you breach these Terms or to comply with law. Sections that by their nature should survive termination will survive.</p>
+    <h3>8. Changes</h3>
+    <p class="muted">We may update these Terms from time to time. Material changes will be reflected by updating the "Last updated" date above. Continued use after changes constitutes acceptance.</p>
+    <h3>9. Contact</h3>
+    <p class="muted">Questions about these Terms: <a href="mailto:${E}">${E}</a>.</p>`);
+
+  if (kind === 'privacy') return wrap('Privacy Policy', `
+    <p class="muted">This Privacy Policy explains what information ${C} collects, how we use it, and your choices. We aim to collect only what is necessary to run the Service.</p>
+    <h3>1. Information we collect</h3>
+    <p class="muted"><strong>Account data:</strong> your email address and a securely hashed password (we never store your password in plain text). <strong>Monitor data:</strong> the names, schedules, ping timestamps, event history, and any alert email or Slack webhook URL you add. <strong>Technical data:</strong> standard server logs (such as IP address and request metadata) used for security and reliability.</p>
+    <h3>2. How we use it</h3>
+    <p class="muted">We use your information solely to operate the Service: to authenticate you, run your monitors, detect missed check-ins, and deliver alerts. We do not sell your personal data. We do not use it for advertising.</p>
+    <h3>3. Third-party processors</h3>
+    <p class="muted">To deliver alerts we may share the minimum necessary data with service providers: our email provider (e.g. Resend) receives the recipient address and message content; if you configure a Slack webhook, alert text is sent to that Slack workspace. Hosting and database infrastructure store your account and monitor data. These providers process data on our behalf.</p>
+    <h3>4. Data retention</h3>
+    <p class="muted">We keep your account and monitor data for as long as your account is active. Event history is retained according to your plan. When you delete a monitor or your account, the associated data is removed from our active systems.</p>
+    <h3>5. Security</h3>
+    <p class="muted">Passwords are hashed with a per-user salt. Sessions use signed, HttpOnly cookies. Ping tokens are unguessable and scoped to a single account. No method of transmission or storage is perfectly secure, but we take reasonable measures to protect your data.</p>
+    <h3>6. Your rights</h3>
+    <p class="muted">You can access, correct, export, or delete your data by using the app or by contacting us. Depending on your location, you may have additional rights under laws such as the GDPR or CCPA; contact us to exercise them.</p>
+    <h3>7. Children</h3>
+    <p class="muted">The Service is not directed to children under 16, and we do not knowingly collect their data.</p>
+    <h3>8. Changes &amp; contact</h3>
+    <p class="muted">We may update this policy; the "Last updated" date will change accordingly. Questions or requests: <a href="mailto:${E}">${E}</a>.</p>`);
+
+  if (kind === 'refunds') return wrap('Refund Policy', `
+    <p class="muted">We want you to be satisfied with ${C}. This policy explains when refunds are available for paid subscriptions.</p>
+    <h3>1. Free plan</h3>
+    <p class="muted">${C} offers a free plan so you can evaluate the Service before paying. We encourage you to use it to confirm the Service meets your needs.</p>
+    <h3>2. 14-day money-back guarantee</h3>
+    <p class="muted">If you are not satisfied with a paid plan, you may request a full refund within 14 days of your initial purchase. Contact <a href="mailto:${E}">${E}</a> from your account email and we will process it.</p>
+    <h3>3. Renewals</h3>
+    <p class="muted">Subscriptions renew automatically. You can cancel at any time from your account or by contacting us; cancellation takes effect at the end of the current billing period and stops future charges. For an unintended renewal, contact us within 7 days of the charge and we will consider a refund of that renewal.</p>
+    <h3>4. How refunds are issued</h3>
+    <p class="muted">Approved refunds are returned to your original payment method. It may take several business days for the credit to appear, depending on your bank or card issuer.</p>
+    <h3>5. Exceptions</h3>
+    <p class="muted">Refunds may be declined in cases of clear abuse of this policy or violation of our <a href="/terms">Terms of Service</a>.</p>
+    <h3>6. Contact</h3>
+    <p class="muted">To request a refund or ask a question: <a href="mailto:${E}">${E}</a>.</p>`);
+
+  return wrap('Not found', '<p class="muted">Unknown page.</p>');
 }
