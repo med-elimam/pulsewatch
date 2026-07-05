@@ -8,6 +8,5 @@ ENV NODE_ENV=production
 # DB_PATH must point at a MOUNTED PERSISTENT VOLUME in production (see DEPLOY.md).
 ENV DB_PATH=/data/pulsewatch.db
 RUN mkdir -p /data
-VOLUME /data
 EXPOSE 3000
 CMD ["node","--no-warnings","server.js"]
